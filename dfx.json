@@ -1,7 +1,16 @@
 {
   "version": 1,
   "dfx": "0.11.0",
-  "canisters": {},
+  "canisters": {
+    "ContentApp": {
+      "type": "motoko",
+      "main": "sample/ContentApp/ContentApp.mo"
+    },
+    "ContentDistributer": {
+      "type": "motoko",
+      "main": "sample/ContentApp/Distributer.mo"
+    }
+  },
   "defaults": {
     "build": {
       "packtool": "vessel sources",
