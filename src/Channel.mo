@@ -1,3 +1,5 @@
+import Feed "./Feed";
+
 module {
     public type SubscribeResult = {
         #ok;
@@ -9,16 +11,7 @@ module {
     };
 
     public type SubscribeActor = actor {
-        subscribe : (feedId : Text, signature : Blob) -> async SubscribeResult;
-        unsubscribe : (feedId : Text, signature : Blob) -> async UnsubscribeResult;
-    };
-
-    public type RegistrationResult = {
-        #registered;
-        #idAlreadyRegistered;
-    };
-
-    public type RegistryActor = actor {
-        register(channelId : Text, channelActor : SubscribeActor) : async RegistrationResult;
+        subscribe : (inbox : Feed.InboxActor, signature : Blob) -> async SubscribeResult;
+        unsubscribe : (inbox : Feed.InboxActor, signature : Blob) -> async UnsubscribeResult;
     };
 };

@@ -3,9 +3,13 @@ import List "mo:base/List";
 
 actor class FeedInstance() {
 
-    private stable var content : List.List<Content.Content> = List.nil<Content.Content>();
+    private stable var feed : List.List<Content.Content> = List.nil<Content.Content>();
 
     public func pushContent(content : Content.Content) : async () {
-        content.push(content);
+        feed := List.push(content, feed);
+    };
+
+    public func getFeed() : async [Content.Content] {
+        List.toArray(feed);
     };
 };

@@ -4,11 +4,11 @@
   "canisters": {
     "ContentApp": {
       "type": "motoko",
-      "main": "sample/ContentApp/ContentApp.mo"
+      "main": "sample/ContentApp/Main.mo"
     },
-    "ContentDistributer": {
+    "ReaderApp": {
       "type": "motoko",
-      "main": "sample/ContentApp/Distributer.mo"
+      "main": "sample/ReaderApp/Main.mo"
     }
   },
   "defaults": {
