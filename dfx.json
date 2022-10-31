@@ -9,6 +9,10 @@
     "ReaderApp": {
       "type": "motoko",
       "main": "sample/ReaderApp/Main.mo"
+    },
+    "AppRegistry": {
+      "type": "motoko",
+      "main": "sample/SNS/AppRegistry.mo"
     }
   },
   "defaults": {

@@ -1,17 +1,20 @@
 import Feed "./Feed";
+import Content "./Content";
 
 module {
     public type SubscribeResult = {
         #ok;
-        #error : Text;
     };
     public type UnsubscribeResult = {
         #ok;
-        #error : Text;
     };
 
-    public type SubscribeActor = actor {
-        subscribe : (inbox : Feed.InboxActor, signature : Blob) -> async SubscribeResult;
-        unsubscribe : (inbox : Feed.InboxActor, signature : Blob) -> async UnsubscribeResult;
+    public type ChannelActor = actor {
+        subscribe : (callback : Feed.Callback, options : ?SubscriptionOptions) -> async SubscribeResult;
+        unsubscribe : () -> async UnsubscribeResult;
+    };
+
+    public type SubscriptionOptions = {
+
     };
 };

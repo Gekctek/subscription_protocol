@@ -3,7 +3,28 @@ import Content "./Content";
 
 module {
 
-    public type InboxActor = actor {
-        pushContent : (content : Content.Content) -> async ();
+    type ChannelId = {
+        appId : Text;
+        channelId : Text;
     };
+
+    public type CallbackArgs = {
+        message : {
+            #content : {
+                title : Text;
+                content : Content.Content;
+            };
+            #changeOwnerKey : {
+                publicKey : Blob;
+            };
+            #changeId : {
+                newId : ChannelId;
+            };
+        };
+        channelId : ChannelId;
+        publicKey : Blob;
+        signature : Blob;
+    };
+
+    public type Callback = shared (update : CallbackArgs) -> async ();
 };
