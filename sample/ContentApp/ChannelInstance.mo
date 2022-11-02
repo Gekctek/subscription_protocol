@@ -74,7 +74,8 @@ actor class ChannelInstance() {
                 title = post.title;
                 content = #text(#raw(post.body));
             });
-            channelId = {
+            source = {
+                registry = Principal.fromText(""); // TODO
                 appId = ""; // TODO
                 channelId = ""; // TODO
             };

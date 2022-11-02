@@ -3,7 +3,8 @@ import Content "./Content";
 
 module {
 
-    type ChannelId = {
+    public type Source = {
+        registry : Principal;
         appId : Text;
         channelId : Text;
     };
@@ -17,11 +18,9 @@ module {
             #changeOwnerKey : {
                 publicKey : Blob;
             };
-            #changeId : {
-                newId : ChannelId;
-            };
+            #changeSource : Source;
         };
-        channelId : ChannelId;
+        source : Source;
         publicKey : Blob;
         signature : Blob;
     };
