@@ -6,6 +6,15 @@ actor AppRegistry {
 
     private stable var apps : Trie.Trie<Text, App.App> = Trie.empty();
 
+    type AppInfo = {
+        name : Text;
+        publicKey : Blob;
+    };
+
+    public query func getRegisteredApps() : async [AppInfo] {
+        Trie.toArray<Text, App.App, AppInfo>(apps, func(k, v) { { name = k; publicKey = v.publicKey } });
+    };
+
     public func register(appId : Text, app : App.App) : async App.RegistrationResult {
         // TODO validate that the app's signature or proof of ownership
         let key = {
@@ -13,7 +22,7 @@ actor AppRegistry {
             key = appId;
         };
         let (newMap, oldValue) = Trie.put(apps, key, Text.equal, app);
-        if (oldValue == null) {
+        if (oldValue != null) {
             return #idAlreadyRegistered;
         };
         apps := newMap;

@@ -10,8 +10,8 @@ module {
     };
 
     public type ChannelActor = actor {
-        subscribe : (callback : Feed.Callback, options : ?SubscriptionOptions) -> async SubscribeResult;
-        unsubscribe : () -> async UnsubscribeResult;
+        subscribe : (callback : Feed.Callback, publicKey : Blob, signature : Blob, options : ?SubscriptionOptions) -> async SubscribeResult;
+        unsubscribe : (publicKey : Blob, signature : Blob) -> async UnsubscribeResult;
     };
 
     public type SubscriptionOptions = {

@@ -15,50 +15,26 @@ actor class ChannelInstance() {
         body : Text;
     };
 
-    type FeedInfo = {
-        id : Text;
-        callback : Feed.Callback;
-    };
-
     type Subscriber = {
-        var feeds : Trie.Trie<Text, FeedInfo>;
-        publicKey : Blob;
+        var callback : Feed.Callback; // TODO is the use case for multiple callbacks worth it or what can do as an alternative?
     };
 
     private stable var publishedPosts : List.List<Post> = List.nil<Post>();
 
     private stable var subscribers : Trie.Trie<Blob, Subscriber> = Trie.empty();
 
-    public func subscribe(feedId : Text, callback : Feed.Callback, publicKey : Blob, signature : Blob) : async Channel.SubscribeResult {
+    public func subscribe(callback : Feed.Callback, publicKey : Blob, signature : Blob, options : ?Channel.SubscriptionOptions) : async Channel.SubscribeResult {
         // TODO validate signature
         let key : Trie.Key<Blob> = {
             hash = Blob.hash(publicKey);
             key = publicKey;
         };
-        let feed : FeedInfo = {
-            id = feedId;
-            callback = callback;
-        };
         let newSubcriber : Subscriber = {
-            var feeds = Trie.empty();
-            publicKey = publicKey;
+            var callback = callback;
         };
-        let (newSubscribers, currentSub) = Trie.put(subscribers, key, Blob.equal, newSubcriber);
-        switch (currentSub) {
-            case (null) {
-                // Add new subscriber
-                subscribers := newSubscribers;
-            };
-            case (?s) {
-                // add/update feed in collection if there is already subscriber data
-                let feedKey = {
-                    hash = Text.hash(feedId);
-                    key = feedId;
-                };
-                let (newFeeds, _) = Trie.put(s.feeds, feedKey, Text.equal, feed);
-                s.feeds := newFeeds;
-            };
-        };
+        let (newSubscribers, _) = Trie.put(subscribers, key, Blob.equal, newSubcriber);
+        // Add new subscriber
+        subscribers := newSubscribers;
         #ok;
     };
 
@@ -74,18 +50,11 @@ actor class ChannelInstance() {
                 title = post.title;
                 content = #text(#raw(post.body));
             });
-            source = {
-                registry = Principal.fromText(""); // TODO
-                appId = ""; // TODO
-                channelId = ""; // TODO
-            };
             publicKey = Blob.fromArray([]); // TODO
             signature = Blob.fromArray([]); // TODO
         };
         for ((key, subscriber) in Trie.iter(subscribers)) {
-            for ((feedId, feed) in Trie.iter(subscriber.feeds)) {
-                await feed.callback(content);
-            };
+            await subscriber.callback(content);
         };
     };
 };

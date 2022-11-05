@@ -18,8 +18,7 @@ module {
     };
 
     public type ChannelInfo = {
-        instance : Channel.ChannelActor;
-        publicKey : Blob;
+        instance : Principal;
         tags : [Text]; // TODO this should be tagging channel content to be able to filter
     };
 
