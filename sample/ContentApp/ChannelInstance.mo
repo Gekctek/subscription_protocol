@@ -8,7 +8,7 @@ import Channel "../../src/Channel";
 import Content "../../src/Content";
 import Feed "../../src/Feed";
 
-actor class ChannelInstance() {
+actor class ChannelInstance(channelOwner : Principal) {
 
     private type Post = {
         title : Text;
@@ -19,15 +19,22 @@ actor class ChannelInstance() {
         var callback : Feed.Callback; // TODO is the use case for multiple callbacks worth it or what can do as an alternative?
     };
 
+    type Auth = {
+        hashType : Text; // TODO text vs variant?
+        publicKey : Blob; // Actual public key of the owner
+        delegationChain : ?[Feed.SignedDelegation]; // Last one here ultimately signs the message
+        signature : Blob; // Der encoded
+    };
+
     private stable var publishedPosts : List.List<Post> = List.nil<Post>();
 
     private stable var subscribers : Trie.Trie<Blob, Subscriber> = Trie.empty();
 
-    public func subscribe(callback : Feed.Callback, publicKey : Blob, signature : Blob, options : ?Channel.SubscriptionOptions) : async Channel.SubscribeResult {
+    public func subscribe(callback : Feed.Callback, auth : Auth, options : ?Channel.SubscriptionOptions) : async Channel.SubscribeResult {
         // TODO validate signature
         let key : Trie.Key<Blob> = {
-            hash = Blob.hash(publicKey);
-            key = publicKey;
+            hash = Blob.hash(auth.publicKey);
+            key = auth.publicKey;
         };
         let newSubcriber : Subscriber = {
             var callback = callback;
@@ -46,12 +53,15 @@ actor class ChannelInstance() {
     public func publish(post : Post) : async () {
         publishedPosts := List.push(post, publishedPosts);
         let content : Feed.CallbackArgs = {
-            message = #content({
+            message = #newContent({
                 title = post.title;
-                content = #text(#raw(post.body));
+                content = ?#text(#html(post.body));
+                link = ""; // TODO
             });
+            hashType = ""; // TODO or just SHA256?
             publicKey = Blob.fromArray([]); // TODO
             signature = Blob.fromArray([]); // TODO
+            delegationChain = null; // TODO
         };
         for ((key, subscriber) in Trie.iter(subscribers)) {
             await subscriber.callback(content);

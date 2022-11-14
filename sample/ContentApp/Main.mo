@@ -48,9 +48,9 @@ actor ContentApp {
         };
     };
 
-    public func createChannel(channelId : Text) : async CreateChannelResult {
+    public shared ({ caller }) func createChannel(channelId : Text) : async CreateChannelResult {
         Cycles.add(1000000000000);
-        let channel : ChannelInstance.ChannelInstance = await ChannelInstance.ChannelInstance();
+        let channel : ChannelInstance.ChannelInstance = await ChannelInstance.ChannelInstance(caller);
         let key = {
             hash = Text.hash(channelId);
             key = channelId;

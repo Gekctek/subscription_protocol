@@ -1,3 +1,6 @@
+import Buffer "mo:base/Buffer";
+import Iter "mo:base/Iter";
+import Hash "mo:base/Hash";
 import Channel "../../src/Channel";
 import Content "../../src/Content";
 import Feed "../../src/Feed";
@@ -12,7 +15,9 @@ actor class FeedInstance() {
 
     type FeedItem = {
         title : Text;
-        content : Content.Content;
+        content : ?Content.Content;
+        link : Text;
+        hash : Hash.Hash;
     };
 
     type ChannelInfo = {
@@ -51,10 +56,12 @@ actor class FeedInstance() {
             return; // TODO?
         };
         switch (update.message) {
-            case (#content(c)) {
+            case (#newContent(c)) {
                 let item : FeedItem = {
                     title = c.title;
                     content = c.content;
+                    link = c.link;
+                    hash = 0; //TODO
                 };
                 feed := List.push(item, feed);
             };
@@ -116,7 +123,34 @@ actor class FeedInstance() {
         };
     };
 
-    public func getFeed() : async [FeedItem] {
-        List.toArray(feed);
+    public func getFeed(limit : Nat, after : ?Hash.Hash) : async [FeedItem] {
+        let l : List.List<FeedItem> = switch (after) {
+            case (null) feed;
+            case (?afterHash) {
+                // If specified `after` then search for the item hash and
+                // get items starting after the specified one
+                var itemFound = false;
+                let itemsAfter = Buffer.Buffer<FeedItem>(limit);
+                label afterLoop for (i in Iter.fromList(feed)) {
+                    if (i.hash == afterHash) {
+                        itemFound := true;
+                    };
+                    if (itemFound) {
+                        itemsAfter.add(i);
+                        if (itemsAfter.size() >= limit) {
+                            break afterLoop;
+                        };
+                    };
+                };
+                if (itemFound) {
+                    return itemsAfter.toArray();
+                } else {
+                    // If item is not found then return normal feed
+                    // Usually due to item being removed from feed after reading
+                    feed;
+                };
+            };
+        };
+        return List.toArray(List.take(l, limit));
     };
 };
