@@ -1,3 +1,4 @@
+import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
 import Hash "mo:base/Hash";
@@ -11,82 +12,86 @@ import Text "mo:base/Text";
 import Blob "mo:base/Blob";
 import Trie "mo:base/Trie";
 
-actor class FeedInstance() {
+actor class FeedInstance(_owner : Principal) {
 
     type FeedItem = {
-        title : Text;
-        content : ?Content.Content;
-        link : Text;
+        channelId : Text;
+        content : Content.Content;
         hash : Hash.Hash;
     };
 
     type ChannelInfo = {
-        ownerPublicKey : Blob;
-        source : Source;
+        owners : [Principal];
+        publishers : [Principal];
         instance : Channel.ChannelActor;
     };
 
-    type Source = {
-        registry : Principal;
-        appId : Text;
-        channelId : Text;
-    };
+    // TODO
+    // type Source = {
+    //     registry : Principal;
+    //     appId : Text;
+    //     channelId : Text;
+    // };
 
-    type ChannelPublicKey = Blob;
-
-    private stable var channels : Trie.Trie<ChannelPublicKey, ChannelInfo> = Trie.empty();
+    private stable var channels : Trie.Trie<Text, ChannelInfo> = Trie.empty();
 
     private stable var feed : List.List<FeedItem> = List.nil();
 
-    // TODO should there be a result, or just 'send message unsubscribe if invalid'
-    // TODO also this should be a preprocess to avoid canister fees?
+    private stable var owner : Principal = _owner;
 
-    public func channelCallback(update : Feed.CallbackArgs) : async () {
-        let channelKey = buildSourceKey(update.publicKey);
-        let c : ?ChannelInfo = Trie.get<ChannelPublicKey, ChannelInfo>(
-            channels,
-            channelKey,
-            Blob.equal,
-        );
-        let channel : ChannelInfo = switch (c) {
-            case (null) return; // TODO?
-            case (?channel) channel;
-        };
-        if (not isSignatureValid(update)) {
-            return; // TODO?
+    public shared ({ caller }) func channelCallback(update : Feed.CallbackArgs) : async Feed.CallbackResult {
+        let channel : ChannelInfo = switch (validateCaller(caller, update.channelId)) {
+            case (#channel(c)) c;
+            case (#channelNotFound) return #notAuthorized;
+            case (#notAuthorized) return #notAuthorized;
         };
         switch (update.message) {
             case (#newContent(c)) {
-                let item : FeedItem = {
-                    title = c.title;
-                    content = c.content;
-                    link = c.link;
-                    hash = 0; //TODO
+                let newItemInfo = {
+                    channelId = update.channelId;
+                    content = c;
                 };
-                feed := List.push(item, feed);
+                let hash : Nat32 = 0; // TODO
+                let newItem : FeedItem = { newItemInfo with hash = hash };
+                feed := List.push(newItem, feed);
             };
-            case (#changeOwnerKey(newKey)) {
-                let newChannel : ChannelInfo = {
-                    ownerPublicKey = newKey.publicKey;
-                    instance = channel.instance;
-                    source = channel.source;
+            case (#changeOwner(newOwner)) {
+                let channelKey = {
+                    hash = Text.hash(update.channelId);
+                    key = update.channelId;
                 };
-                let (newChannels, _) = Trie.put(channels, channelKey, Blob.equal, newChannel);
+                let newChannel = { channel with owner = newOwner };
+                let (newChannels, _) = Trie.put(channels, channelKey, Text.equal, newChannel);
                 channels := newChannels;
             };
         };
+        #accepted;
     };
 
-    private func buildSourceKey(s : ChannelPublicKey) : Trie.Key<ChannelPublicKey> {
-        {
-            hash = Blob.hash(s);
-            key = s;
+    private func validateCaller(caller : Principal, channelId : Text) : {
+        #channel : ChannelInfo;
+        #channelNotFound;
+        #notAuthorized;
+    } {
+
+        let c : ?ChannelInfo = Trie.get<Text, ChannelInfo>(
+            channels,
+            {
+                hash = Text.hash(channelId);
+                key = channelId;
+            },
+            Text.equal,
+        );
+        switch (c) {
+            case (null) #channelNotFound;
+            case (?channel) {
+                if (Array.find<Principal>(channel.publishers, func(p) { p == caller }) == null) {
+                    #notAuthorized;
+                } else {
+                    #channel(channel);
+                };
+            };
         };
-    };
-
-    private func isSignatureValid(update : Feed.CallbackArgs) : Bool {
-        // TODO
-        true;
     };
 
     type AddChannelResult = {
@@ -94,34 +99,32 @@ actor class FeedInstance() {
         #channelNotFound;
     };
 
-    public func subscribeToChannel(source : Source, options : ?Channel.SubscriptionOptions) : async AddChannelResult {
-        let appRegistry : App.RegistryActor = actor (Principal.toText(source.registry));
-        let appChannelInfo : App.ChannelInfo = switch (await appRegistry.getChannelInfo(source.appId, source.channelId)) {
-            case (#notFound) return #channelNotFound;
-            case (#ok(info)) info;
-        };
-        let channelInstance : Channel.ChannelActor = actor (Principal.toText(appChannelInfo.instance));
+    // public func subscribeToChannel(source : Source, options : ?Channel.SubscriptionOptions) : async AddChannelResult {
+    //     let appRegistry : App.RegistryActor = actor (Principal.toText(source.registry));
+    //     let appChannelInfo : App.ChannelInfo = switch (await appRegistry.getChannelInfo(source.appId, source.channelId)) {
+    //         case (#notFound) return #channelNotFound;
+    //         case (#ok(info)) info;
+    //     };
+    //     let channelInstance : Channel.ChannelActor = actor (Principal.toText(appChannelInfo.instance));
 
-        let publicKey = Blob.fromArray([]); // TODO
-        let signature = Blob.fromArray([]); // TODO
-        switch (await channelInstance.subscribe(channelCallback, publicKey, signature, options)) {
-            case (#ok) {
-                let channelKey = buildSourceKey(publicKey);
-                let (newChannels, _) = Trie.put(
-                    channels,
-                    channelKey,
-                    Blob.equal,
-                    {
-                        ownerPublicKey = publicKey;
-                        source = source;
-                        instance = channelInstance;
-                    },
-                );
-                channels := newChannels;
-                #ok;
-            };
-        };
-    };
+    //     switch (await channelInstance.subscribe(channelCallback, options)) {
+    //         case (#ok) {
+    //             let channelKey = buildSourceKey(publicKey);
+    //             let (newChannels, _) = Trie.put(
+    //                 channels,
+    //                 channelKey,
+    //                 Blob.equal,
+    //                 {
+    //                     ownerPublicKey = publicKey;
+    //                     source = source;
+    //                     instance = channelInstance;
+    //                 },
+    //             );
+    //             channels := newChannels;
+    //             #ok;
+    //         };
+    //     };
+    // };
 
     public func getFeed(limit : Nat, after : ?Hash.Hash) : async [FeedItem] {
         let l : List.List<FeedItem> = switch (after) {

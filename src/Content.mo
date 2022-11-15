@@ -1,21 +1,31 @@
+import Time "mo:base/Time";
 module {
     public type Link = {
         #http : Text;
         #ipfs : Text;
     };
 
-    type ContentBase = {
+    public type Author = {
+        #name : Text;
+        #identity : Principal;
+        #handle : Text;
+    };
 
+    public type Image = {
+        #link : Link;
+        #file : {
+            format : Text;
+            data : Blob;
+        };
     };
 
     public type Content = {
-        #article : {};
-        #image : {};
-        #video : {};
-        #podcast : {};
-        #text : {
-            #raw : Text;
-            #html : Text;
-        };
+        title : Text;
+        description : Text;
+        link : Text;
+        authors : [Author];
+        image : ?Image;
+        language : ?Text;
+        date : Time.Time;
     };
 };

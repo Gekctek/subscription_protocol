@@ -9,28 +9,18 @@ import Cycles "mo:base/ExperimentalCycles";
 
 actor ContentApp {
 
-    private stable var channels : Trie.Trie<Text, ChannelInstance.ChannelInstance> = Trie.empty();
+    type ChannelInfo = {
+        name : Text;
+        description : ?Text;
+        instance : ChannelInstance.ChannelInstance;
+    };
 
     type CreateChannelResult = {
         #created : Principal;
         #idAlreadyRegistered : Principal;
     };
 
-    public func register(appId : Text, registry : Principal) : async App.RegistrationResult {
-        let appRegistry : App.RegistryActor = actor (Principal.toText(registry));
-
-        let publicKey = Blob.fromArray([]); // TODO
-        let signature = Blob.fromArray([]); // TODO
-
-        await appRegistry.register(
-            appId,
-            {
-                publicKey = publicKey;
-                signature = signature;
-                getChannelInfo = getChannelInfo;
-            },
-        );
-    };
+    private stable var channels : Trie.Trie<Text, ChannelInfo> = Trie.empty();
 
     public func getChannelInfo(channelId : Text) : async App.GetChannelInfoResult {
         let key = {
@@ -40,7 +30,7 @@ actor ContentApp {
         switch (Trie.get(channels, key, Text.equal)) {
             case (?c) {
                 #ok({
-                    instance = Principal.fromActor(c);
+                    instance = Principal.fromActor(c.instance);
                     tags = []; // TODO
                 });
             };
@@ -48,21 +38,32 @@ actor ContentApp {
         };
     };
 
-    public shared ({ caller }) func createChannel(channelId : Text) : async CreateChannelResult {
-        Cycles.add(1000000000000);
-        let channel : ChannelInstance.ChannelInstance = await ChannelInstance.ChannelInstance(caller);
+    public shared ({ caller }) func createChannel(info : { channelId : Text; name : Text; description : ?Text }) : async CreateChannelResult {
+
         let key = {
-            hash = Text.hash(channelId);
-            key = channelId;
+            hash = Text.hash(info.channelId);
+            key = info.channelId;
         };
-        let (newChannels, existingChannel) = Trie.put(channels, key, Text.equal, channel);
+
+        let existingChannel : ?ChannelInfo = Trie.get(channels, key, Text.equal);
         switch (existingChannel) {
             case (null) {
+                let cost = 1_000_000_000_000;
+                // let acceptedAmount = Cycles.accept(cost); // TODO
+                let acceptedAmount = cost;
+                Cycles.add(acceptedAmount);
+                let newInstance : ChannelInstance.ChannelInstance = await ChannelInstance.ChannelInstance(info.channelId, caller);
+                let newChannel = {
+                    name = info.name;
+                    description = info.description;
+                    instance = newInstance;
+                };
+                let (newChannels, _) = Trie.put(channels, key, Text.equal, newChannel);
                 channels := newChannels;
-                #created(Principal.fromActor(channel));
+                #created(Principal.fromActor(newInstance));
             };
             case (?ec) {
-                #idAlreadyRegistered(Principal.fromActor(ec));
+                #idAlreadyRegistered(Principal.fromActor(ec.instance));
             };
         };
     };

@@ -1,0 +1,8 @@
+type Result = 
+ variant {
+   created: principal;
+   idAlreadyRegistered: principal;
+ };
+service : {
+  createFeed: (text) -> (Result);
+}

@@ -1,3 +1,5 @@
+import Buffer "mo:base/Buffer";
+import Time "mo:base/Time";
 import Text "mo:base/Text";
 import List "mo:base/List";
 import Blob "mo:base/Blob";
@@ -8,10 +10,11 @@ import Channel "../../src/Channel";
 import Content "../../src/Content";
 import Feed "../../src/Feed";
 
-actor class ChannelInstance(channelOwner : Principal) {
+actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
 
     private type Post = {
         title : Text;
+        description : Text;
         body : Text;
     };
 
@@ -19,35 +22,39 @@ actor class ChannelInstance(channelOwner : Principal) {
         var callback : Feed.Callback; // TODO is the use case for multiple callbacks worth it or what can do as an alternative?
     };
 
-    type Auth = {
-        hashType : Text; // TODO text vs variant?
-        publicKey : Blob; // Actual public key of the owner
-        delegationChain : ?[Feed.SignedDelegation]; // Last one here ultimately signs the message
-        signature : Blob; // Der encoded
-    };
-
     private stable var publishedPosts : List.List<Post> = List.nil<Post>();
 
-    private stable var subscribers : Trie.Trie<Blob, Subscriber> = Trie.empty();
+    private stable var subscribers : Trie.Trie<Principal, Subscriber> = Trie.empty();
 
-    public func subscribe(callback : Feed.Callback, auth : Auth, options : ?Channel.SubscriptionOptions) : async Channel.SubscribeResult {
-        // TODO validate signature
-        let key : Trie.Key<Blob> = {
-            hash = Blob.hash(auth.publicKey);
-            key = auth.publicKey;
+    public shared ({ caller }) func subscribe(callback : Feed.Callback, options : ?Channel.SubscriptionOptions) : async Channel.SubscribeResult {
+        let key : Trie.Key<Principal> = {
+            hash = Principal.hash(caller);
+            key = caller;
         };
         let newSubcriber : Subscriber = {
             var callback = callback;
         };
-        let (newSubscribers, _) = Trie.put(subscribers, key, Blob.equal, newSubcriber);
         // Add new subscriber
+        let (newSubscribers, _) = Trie.put(subscribers, key, Principal.equal, newSubcriber);
         subscribers := newSubscribers;
         #ok;
     };
 
-    public func unsubscribe(publicKey : Blob, signature : Blob) : async Channel.UnsubscribeResult {
-        // TODO
-        #ok;
+    public shared ({ caller }) func unsubscribe() : async Channel.UnsubscribeResult {
+        let key : Trie.Key<Principal> = {
+            hash = Principal.hash(caller);
+            key = caller;
+        };
+        // Remove subscriber
+        let (newSubscribers, removedSub) = Trie.remove(subscribers, key, Principal.equal);
+
+        switch (removedSub) {
+            case (null) #notSubscribed;
+            case (?s) {
+                subscribers := newSubscribers;
+                #ok;
+            };
+        };
     };
 
     public func publish(post : Post) : async () {
@@ -55,16 +62,28 @@ actor class ChannelInstance(channelOwner : Principal) {
         let content : Feed.CallbackArgs = {
             message = #newContent({
                 title = post.title;
-                content = ?#text(#html(post.body));
                 link = ""; // TODO
+                authors = [];
+                date = Time.now();
+                description = post.description;
+                image = ?#file({ data = Blob.fromArray([]); format = "png" });
+                language = ?"en-us";
             });
-            hashType = ""; // TODO or just SHA256?
-            publicKey = Blob.fromArray([]); // TODO
-            signature = Blob.fromArray([]); // TODO
-            delegationChain = null; // TODO
+            channelId = channelId;
         };
+        // TODO will this lock up the cansiter if there are a lot of subscribers?
         for ((key, subscriber) in Trie.iter(subscribers)) {
-            await subscriber.callback(content);
+            // TODO check if subscriber is applicable to this content
+            switch (await subscriber.callback(content)) {
+                case (#accepted) {
+
+                };
+                case (#notAuthorized) {
+                    // Remove invalid subscriptions
+                    let (newSubs, removedSub) = Trie.remove(subscribers, { hash = Principal.hash(key); key = key }, Principal.equal);
+                    subscribers := newSubs;
+                };
+            };
         };
     };
 };

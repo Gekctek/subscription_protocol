@@ -8,29 +8,39 @@ import Trie "mo:base/Trie";
 
 actor ReaderApp {
 
-    private stable var feeds : Trie.Trie<Text, FeedInstance.FeedInstance> = Trie.empty();
+    private stable var feeds : Trie.Trie<Principal, FeedInstance.FeedInstance> = Trie.empty();
 
     public type Result = {
         #created : Principal;
-        #idAlreadyRegistered : Principal;
+        #exists : Principal;
     };
 
-    public func createFeed(feedId : Text) : async Result {
-        Cycles.add(1000000000000);
-        let feed : FeedInstance.FeedInstance = await FeedInstance.FeedInstance();
+    public shared ({ caller }) func getOrCreateFeed() : async Result {
+        // TODO validate not anonymous?
         let key = {
-            hash = Text.hash(feedId);
-            key = feedId;
+            hash = Principal.hash(caller);
+            key = caller;
         };
-        let (newfeeds, existingFeed) = Trie.put(feeds, key, Text.equal, feed);
+        let existingFeed = Trie.get(feeds, key, Principal.equal);
         switch (existingFeed) {
             case (null) {
-                feeds := newfeeds;
-                #created(Principal.fromActor(feed));
+                let cost = 1_000_000_000_000;
+                let cyclesAccepted = Cycles.accept(cost);
+                Cycles.add(cyclesAccepted);
+                let newFeed : FeedInstance.FeedInstance = await FeedInstance.FeedInstance(caller);
+                let (newFeeds, _) = Trie.put(feeds, key, Principal.equal, newFeed);
+                feeds := newFeeds;
+                #created(Principal.fromActor(newFeed));
             };
             case (?ef) {
-                #idAlreadyRegistered(Principal.fromActor(ef));
+                #exists(Principal.fromActor(ef));
             };
+        };
+    };
+
+    public shared func upgradeFeeds() : async () {
+        for ((owner, feed) in Trie.iter(feeds)) {
+            let z = await (system FeedInstance.FeedInstance)(#upgrade(feed))(owner);
         };
     };
 };

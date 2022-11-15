@@ -3,12 +3,15 @@ import Channel "./Channel";
 module {
     public type RegistrationResult = {
         #ok;
+        #notAuthorized;
         #idAlreadyRegistered;
     };
 
     public type App = {
-        publicKey : Blob;
-        signature : Blob;
+        id : Text;
+        name : Text;
+        owners : [Principal];
+        description : Text;
         getChannelInfo : shared (channelId : Text) -> async GetChannelInfoResult;
     };
 
@@ -23,7 +26,7 @@ module {
     };
 
     public type RegistryActor = actor {
-        register : (appId : Text, app : App) -> async RegistrationResult;
+        register : (app : App) -> async RegistrationResult;
         getChannelInfo : (appId : Text, channelId : Text) -> async GetChannelInfoResult;
     };
 };

@@ -1,0 +1,25 @@
+type RegistrationResult = 
+ variant {
+   idAlreadyRegistered;
+   ok;
+ };
+type GetChannelInfoResult = 
+ variant {
+   notFound;
+   ok: ChannelInfo;
+ };
+type CreateChannelResult = 
+ variant {
+   created: principal;
+   idAlreadyRegistered: principal;
+ };
+type ChannelInfo = 
+ record {
+   instance: principal;
+   tags: vec text;
+ };
+service : {
+  createChannel: (text) -> (CreateChannelResult);
+  getChannelInfo: (text) -> (GetChannelInfoResult);
+  register: (text, principal) -> (RegistrationResult);
+}
