@@ -22,7 +22,7 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     hash: IDL.Nat32
   }));
   return IDL.Service({
-    'getFeed': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetFeedResult], [])
+    'getFeed': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetFeedResult], ["query"])
   });
 };
 
