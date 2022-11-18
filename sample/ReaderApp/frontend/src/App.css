@@ -1,12 +1,21 @@
+body {
+  background-color: rgb(34, 36, 38);
+  color: rgb(232, 230, 227);
+}
+
+a {
+  color: inherit;
+}
+
 .swiper {
   width: 100%;
+  max-width: 600px;
   height: 100%;
 }
 
 .swiper-slide {
   text-align: center;
   font-size: 18px;
-  background: #fff;
 
   /* Center slide text vertically */
   display: -webkit-box;

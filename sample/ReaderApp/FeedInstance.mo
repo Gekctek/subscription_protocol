@@ -40,11 +40,7 @@ actor class FeedInstance(_owner : Principal) {
     private stable var owner : Principal = _owner;
 
     public shared ({ caller }) func channelCallback(update : Feed.CallbackArgs) : async Feed.CallbackResult {
-        let channel : ChannelInfo = switch (validateCaller(caller, update.channelId)) {
-            case (#channel(c)) c;
-            case (#channelNotFound) return #notAuthorized;
-            case (#notAuthorized) return #notAuthorized;
-        };
+
         switch (update.message) {
             case (#newContent(c)) {
                 let newItemInfo = {
@@ -56,6 +52,11 @@ actor class FeedInstance(_owner : Principal) {
                 feed := List.push(newItem, feed);
             };
             case (#changeOwner(newOwner)) {
+                let channel : ChannelInfo = switch (validateCaller(caller, update.channelId)) {
+                    case (#channel(c)) c;
+                    case (#channelNotFound) return #notAuthorized;
+                    case (#notAuthorized) return #notAuthorized;
+                };
                 let channelKey = {
                     hash = Text.hash(update.channelId);
                     key = update.channelId;
@@ -86,7 +87,8 @@ actor class FeedInstance(_owner : Principal) {
             case (null) #channelNotFound;
             case (?channel) {
                 if (Array.find<Principal>(channel.publishers, func(p) { p == caller }) == null) {
-                    #notAuthorized;
+                    // #notAuthorized; TODO
+                    #channel(channel);
                 } else {
                     #channel(channel);
                 };
@@ -126,7 +128,7 @@ actor class FeedInstance(_owner : Principal) {
     //     };
     // };
 
-    public func getFeed(limit : Nat, after : ?Hash.Hash) : async [FeedItem] {
+    public query func getFeed(limit : Nat, after : ?Hash.Hash) : async [FeedItem] {
         let l : List.List<FeedItem> = switch (after) {
             case (null) feed;
             case (?afterHash) {

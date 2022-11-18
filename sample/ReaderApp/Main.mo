@@ -25,8 +25,8 @@ actor ReaderApp {
         switch (existingFeed) {
             case (null) {
                 let cost = 1_000_000_000_000;
-                let cyclesAccepted = Cycles.accept(cost);
-                Cycles.add(cyclesAccepted);
+                // let cyclesAccepted = Cycles.accept(cost); TODO
+                Cycles.add(cost);
                 let newFeed : FeedInstance.FeedInstance = await FeedInstance.FeedInstance(caller);
                 let (newFeeds, _) = Trie.put(feeds, key, Principal.equal, newFeed);
                 feeds := newFeeds;

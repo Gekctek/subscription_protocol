@@ -14,15 +14,11 @@ actor AppRegistry {
         description : Text;
     };
 
-    public query func getRegisteredApps() : async [AppInfo] {
-        Trie.toArray<Text, App.App, AppInfo>(
+    public query func getRegisteredApps() : async [App.App] {
+        Trie.toArray<Text, App.App, App.App>(
             apps,
             func(k, v) {
-                {
-                    id = k;
-                    name = v.name;
-                    description = v.description;
-                };
+                v;
             },
         );
     };

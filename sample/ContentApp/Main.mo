@@ -30,6 +30,9 @@ actor ContentApp {
         switch (Trie.get(channels, key, Text.equal)) {
             case (?c) {
                 #ok({
+                    id = channelId;
+                    name = c.name;
+                    description = c.description;
                     instance = Principal.fromActor(c.instance);
                     tags = []; // TODO
                 });
@@ -65,6 +68,12 @@ actor ContentApp {
             case (?ec) {
                 #idAlreadyRegistered(Principal.fromActor(ec.instance));
             };
+        };
+    };
+
+    public shared ({ caller }) func upgradeChannels() : async () {
+        for ((id, channel) in Trie.iter(channels)) {
+            let z = await (system ChannelInstance.ChannelInstance)(#upgrade(channel.instance))(id, caller);
         };
     };
 };

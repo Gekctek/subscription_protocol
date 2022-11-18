@@ -21,8 +21,10 @@ module {
     };
 
     public type ChannelInfo = {
+        id : Text;
+        name : Text;
+        description : ?Text;
         instance : Principal;
-        tags : [Text]; // TODO this should be tagging channel content to be able to filter
     };
 
     public type RegistryActor = actor {

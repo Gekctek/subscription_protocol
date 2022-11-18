@@ -16,6 +16,8 @@ actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
         title : Text;
         description : Text;
         body : Text;
+        link : Text;
+        imageLink : ?Text;
     };
 
     type Subscriber = {
@@ -57,16 +59,20 @@ actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
         };
     };
 
+    public func getSubscribers() : async [Principal] {
+        return Trie.toArray<Principal, Subscriber, Principal>(subscribers, func(k, v) { k });
+    };
+
     public func publish(post : Post) : async () {
         publishedPosts := List.push(post, publishedPosts);
         let content : Feed.CallbackArgs = {
             message = #newContent({
                 title = post.title;
-                link = ""; // TODO
+                link = post.link; // TODO
                 authors = [];
                 date = Time.now();
                 description = post.description;
-                image = ?#file({ data = Blob.fromArray([]); format = "png" });
+                imageLink = post.imageLink;
                 language = ?"en-us";
             });
             channelId = channelId;
