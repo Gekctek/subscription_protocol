@@ -4,19 +4,32 @@ import type { IDL } from '@dfinity/candid';
 import { createActor } from './ActorUtil';
 import { readerAppCanisterId } from './CanisterIds';
 
-export type Result = { 'created': Principal } |
-{ 'exists': Principal };
+export type GetResult = { 'ok': Principal } |
+{ 'notFound': null } |
+{ 'notAuthenticated': null };
+
+export type CreateResult = { 'ok': Principal } |
+{ 'notAuthenticated': null };
+
+
 export interface _SERVICE {
-    'getOrCreateFeed': ActorMethod<[], Result>,
+    'getUserFeed': ActorMethod<[], GetResult>,
+    'createUserFeed': ActorMethod<[], CreateResult>,
     'upgradeFeeds': ActorMethod<[], undefined>,
 }
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
-    const Result = IDL.Variant({
-        'created': IDL.Principal,
-        'exists': IDL.Principal,
+    const GetResult = IDL.Variant({
+        'ok': IDL.Principal,
+        'notFound': IDL.Null,
+        'notAuthenticated': IDL.Null
+    });
+    const CreateResult = IDL.Variant({
+        'ok': IDL.Principal,
+        'notAuthenticated': IDL.Null
     });
     return IDL.Service({
-        'getOrCreateFeed': IDL.Func([], [Result], []),
+        'getUserFeed': IDL.Func([], [GetResult], ["query"]),
+        'createUserFeed': IDL.Func([], [CreateResult], []),
         'upgradeFeeds': IDL.Func([], [], []),
     });
 };

@@ -5,7 +5,16 @@ let Package =
 let
   -- This is where you can add your own packages to the package-set
   additions =
-    [] : List Package
+    [{ name = "candid"
+      , version = "v1.0.1"
+      , repo = "https://github.com/gekctek/motoko_candid"
+      , dependencies = ["xtendedNumbers"] : List Text
+    },
+    { name = "xtendedNumbers"
+    , version = "v1.0.0"
+    , repo = "https://github.com/gekctek/motoko_numbers"
+    , dependencies = [] : List Text
+    }] : List Package
 
 let
   {- This is where you can override existing packages in the package-set

@@ -1,9 +1,4 @@
-import { children, Component, createResource, createSignal, For, JSX, Show } from 'solid-js';
-import { createFeedActor, FeedItemInfo } from '../api/FeedActor';
-import { ChannelInfo } from '../api/models/ChannelInfo';
-import { Principal } from '@dfinity/principal';
-import { feedCanisterId, setFeedCanisterId } from '../Signals';
-import { ReaderApp } from '../api/ReaderAppActor';
+import { children, Component, JSX } from 'solid-js';
 import { Paper } from "@suid/material"
 
 

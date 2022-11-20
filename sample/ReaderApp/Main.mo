@@ -10,13 +10,21 @@ actor ReaderApp {
 
     private stable var feeds : Trie.Trie<Principal, FeedInstance.FeedInstance> = Trie.empty();
 
-    public type Result = {
-        #created : Principal;
-        #exists : Principal;
+    public type GetResult = {
+        #ok : Principal;
+        #notFound;
+        #notAuthenticated;
+    };
+    public type CreateResult = {
+        #ok : Principal;
+        // #notEnoughFunds;// TODO
+        #notAuthenticated;
     };
 
-    public shared ({ caller }) func getOrCreateFeed() : async Result {
-        // TODO validate not anonymous?
+    public shared query ({ caller }) func getUserFeed() : async GetResult {
+        if (Principal.isAnonymous(caller)) {
+            return #notAuthenticated;
+        };
         let key = {
             hash = Principal.hash(caller);
             key = caller;
@@ -24,18 +32,26 @@ actor ReaderApp {
         let existingFeed = Trie.get(feeds, key, Principal.equal);
         switch (existingFeed) {
             case (null) {
-                let cost = 1_000_000_000_000;
-                // let cyclesAccepted = Cycles.accept(cost); TODO
-                Cycles.add(cost);
-                let newFeed : FeedInstance.FeedInstance = await FeedInstance.FeedInstance(caller);
-                let (newFeeds, _) = Trie.put(feeds, key, Principal.equal, newFeed);
-                feeds := newFeeds;
-                #created(Principal.fromActor(newFeed));
+                #notFound;
             };
             case (?ef) {
-                #exists(Principal.fromActor(ef));
+                #ok(Principal.fromActor(ef));
             };
         };
+    };
+
+    public shared ({ caller }) func createUserFeed() : async CreateResult {
+        let cost = 1_000_000_000_000;
+        // let cyclesAccepted = Cycles.accept(cost); TODO
+        Cycles.add(cost);
+        let key = {
+            hash = Principal.hash(caller);
+            key = caller;
+        };
+        let newFeed : FeedInstance.FeedInstance = await FeedInstance.FeedInstance(caller);
+        let (newFeeds, _) = Trie.put(feeds, key, Principal.equal, newFeed);
+        feeds := newFeeds;
+        #ok(Principal.fromActor(newFeed));
     };
 
     public shared func upgradeFeeds() : async () {

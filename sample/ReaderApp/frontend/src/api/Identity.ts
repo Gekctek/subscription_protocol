@@ -15,7 +15,11 @@ export async function login() {
             let identity = authClient.getIdentity();
             setIdentity(identity);
         },
-        identityProvider: `http://localhost:4943?canisterId=${internetIdentityCanisterId.toText()}`
+        identityProvider: `http://localhost:4943?canisterId=${internetIdentityCanisterId.toText()}`,
+        maxTimeToLive: BigInt(30) * BigInt(24) * BigInt(3_600_000_000_000), // 30 days
+        onError(e) {
+            alert("Failed login\n" + JSON.stringify(e)); // TODO
+        }
     })
 }
 export async function logout() {

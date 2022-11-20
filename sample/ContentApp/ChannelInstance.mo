@@ -59,7 +59,7 @@ actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
         };
     };
 
-    public func getSubscribers() : async [Principal] {
+    public query func getSubscribers() : async [Principal] {
         return Trie.toArray<Principal, Subscriber, Principal>(subscribers, func(k, v) { k });
     };
 

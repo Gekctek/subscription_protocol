@@ -1,51 +1,18 @@
-import { Component, createResource, createSignal, For, Show } from 'solid-js';
-import { createFeedActor, FeedItemInfo } from '../api/FeedActor';
+import { Component, Match, Show, Switch } from 'solid-js';
+import { FeedItemInfo } from '../api/FeedActor';
 import { ChannelInfo } from '../api/models/ChannelInfo';
 import { Principal } from '@dfinity/principal';
-import { feedCanisterId, setFeedCanisterId, setLoading } from '../Signals';
-import { ReaderApp } from '../api/ReaderAppActor';
+import { feedIndex, feedItems, feedResource, nextFeedItem, previousFeedItem, saveItemForLater } from '../Signals';
 import Card from './Card';
 import Button from '@suid/material/Button';
-import { Fab } from "@suid/material";
-import RefreshIcon from "@suid/icons-material/Refresh";
+import Fab from '@suid/material/Fab';
+import RefreshIcon from '@suid/icons-material/Refresh';
+import { CircularProgress } from "@suid/material"
+import WbSunnyIcon from '@suid/icons-material/WbSunny';
 
 
 type Props = { value: FeedItemInfo, channel: ChannelInfo };
 
-
-const [after, setAfter] = createSignal<bigint | null>(null);
-
-function getNext(saveForLater: boolean) {
-    setItemIndex(itemIndex() + 1);
-};
-
-
-const [itemIndex, setItemIndex] = createSignal<number>(0);
-
-async function fetchFeed(canisterId: Principal, info: { value: FeedItemInfo[] | undefined; refetching: boolean | unknown }): Promise<FeedItemInfo[]> {
-    setItemIndex(0);
-    setLoading(true);
-    let afterValue = after();
-    let actor = createFeedActor(canisterId);
-    let items = await actor.getFeed(10, afterValue ? [afterValue] : []);
-    setLoading(false);
-    return items;
-};
-
-export const [feedItems, feedResource] = createResource(feedCanisterId, fetchFeed);
-
-async function getOrCreateFeed() {
-    let feedResult = await ReaderApp.getOrCreateFeed();
-    let feed;
-    if ('created' in feedResult) {
-        feed = feedResult.created;
-    } else {
-        feed = feedResult.exists;
-    };
-    setFeedCanisterId(feed);
-}
-
-await getOrCreateFeed(); // TODO
 
 const Item: Component<Props> = (props: Props) => {
 
@@ -109,35 +76,73 @@ const Feed: Component = () => {
         }
     }; // TODO
     return (
-        <div style={{
-            height: '100%',
-            display: 'flex',
-            "flex-direction": 'column'
-        }}>
-            <Show when={feedItems()}>
-                <div style={{
-                    "flex-grow": 1,
-                    overflow: 'scroll'
-                }}>
-                    <Card >
-                        <Item
-                            value={feedItems()![itemIndex()]!}
-                            channel={channelMap[feedItems()![itemIndex()]!.channelId]} />
-                    </Card>
+        <Switch>
+            <Match when={feedItems.loading}>
+                <div
+                    style={{
+                        display: 'flex',
+                        'justify-content': 'center',
+                        'align-items': 'center',
+                        height: '100%'
+                    }}>
+                    <CircularProgress />
                 </div>
-            </Show>
-            <div style={{
-                height: '50px',
-                "flex-grow": 0,
-                width: '100%'
-            }}>
-                <Button onClick={() => getNext(true)}>Save for Later</Button>
-                <Button onClick={() => getNext(false)}>Next</Button>
-                <Fab color='primary' aria-label='refresh' onClick={() => feedResource.refetch()}>
-                    <RefreshIcon />
-                </Fab>
-            </div>
-        </div >
+            </Match>
+            <Match when={(feedItems()?.length ?? 0) > feedIndex()}>
+                <div style={{
+                    height: '100%',
+                    display: 'flex',
+                    "flex-direction": 'column'
+                }}>
+                    <div style={{
+                        "flex-grow": 1,
+                        overflow: 'scroll'
+                    }}>
+                        <Card >
+                            <Item
+                                value={feedItems()![feedIndex()]}
+                                channel={channelMap[feedItems()![feedIndex()]!.channelId]} />
+                        </Card>
+                    </div>
+                    <div style={{
+                        height: '50px',
+                        "flex-grow": 0,
+                        width: '100%'
+                    }}>
+                        <Button onClick={() => previousFeedItem()}>Back</Button>
+                        <Button onClick={() => saveItemForLater()}>Save for Later</Button>
+                        <Button onClick={() => nextFeedItem()}>Next</Button>
+                    </div>
+                </div >
+            </Match>
+            <Match when={(feedItems()?.length ?? 0) < feedIndex() + 1}>
+                <div
+                    style={{
+                        display: 'flex',
+                        'justify-content': 'center',
+                        'align-items': 'center',
+                        "flex-flow": 'column',
+                        height: '100%'
+                    }}>
+                    <div>
+                        <WbSunnyIcon style={{
+                            'font-size': '200px'
+                        }} />
+                    </div>
+                    <div style={{
+                        "font-size": '50px'
+                    }}>
+                        Done.
+                    </div>
+                    <Fab onClick={() => feedResource.refetch()} style={{
+                        margin: '20px'
+                    }}>
+                        <RefreshIcon />
+                    </Fab>
+                </div>
+            </Match>
+        </Switch>
+
     );
 };
 

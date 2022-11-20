@@ -12,17 +12,23 @@ export type FeedItemInfo = {
 
 export type Result = [FeedItemInfo];
 
-export interface _SERVICE { 'getFeed': ActorMethod<[number, [bigint] | []], FeedItemInfo[]> }
+export interface _SERVICE {
+  'getUnread': ActorMethod<[number, [number] | []], FeedItemInfo[]>
+  'saveItemForLater': ActorMethod<[number], void>,
+  'markItemAsRead': ActorMethod<[number], void>
+}
 
 
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
-  const GetFeedResult = IDL.Vec(IDL.Record({
+  const GetUnreadResult = IDL.Vec(IDL.Record({
     channelId: IDL.Text,
     content: ContentIDL,
     hash: IDL.Nat32
   }));
   return IDL.Service({
-    'getFeed': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetFeedResult], ["query"])
+    'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetUnreadResult], ["query"]),
+    'saveItemForLater': IDL.Func([IDL.Nat32], [], ["oneway"]),
+    'markItemAsRead': IDL.Func([IDL.Nat32], [], ["oneway"]),
   });
 };
 

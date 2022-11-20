@@ -1,3 +1,4 @@
+import Nat32 "mo:base/Nat32";
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
@@ -11,6 +12,8 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Blob "mo:base/Blob";
 import Trie "mo:base/Trie";
+import TrieSet "mo:base/TrieSet";
+import CandidValue "mo:candid/Value";
 
 actor class FeedInstance(_owner : Principal) {
 
@@ -35,7 +38,11 @@ actor class FeedInstance(_owner : Principal) {
 
     private stable var channels : Trie.Trie<Text, ChannelInfo> = Trie.empty();
 
-    private stable var feed : List.List<FeedItem> = List.nil();
+    private stable var unread : List.List<Hash.Hash> = List.nil();
+
+    private stable var savedForLater : List.List<Hash.Hash> = List.nil();
+
+    private stable var itemHashTree : Trie.Trie<Hash.Hash, FeedItem> = Trie.empty();
 
     private stable var owner : Principal = _owner;
 
@@ -46,10 +53,17 @@ actor class FeedInstance(_owner : Principal) {
                 let newItemInfo = {
                     channelId = update.channelId;
                     content = c;
+                    status = #unread;
                 };
-                let hash : Nat32 = 0; // TODO
+                let hash : Nat32 = CandidValue.hash(#record([{ d = 1 }])); // TODO
                 let newItem : FeedItem = { newItemInfo with hash = hash };
-                feed := List.push(newItem, feed);
+                let key = {
+                    hash = hash;
+                    key = hash;
+                };
+                let newItemHashTree = Trie.put<Hash.Hash, FeedItem>(itemHashTree, key, Nat32.equal, newItem);
+
+                unread := List.push(hash, unread);
             };
             case (#changeOwner(newOwner)) {
                 let channel : ChannelInfo = switch (validateCaller(caller, update.channelId)) {
@@ -128,34 +142,76 @@ actor class FeedInstance(_owner : Principal) {
     //     };
     // };
 
-    public query func getFeed(limit : Nat, after : ?Hash.Hash) : async [FeedItem] {
-        let l : List.List<FeedItem> = switch (after) {
-            case (null) feed;
-            case (?afterHash) {
-                // If specified `after` then search for the item hash and
-                // get items starting after the specified one
-                var itemFound = false;
-                let itemsAfter = Buffer.Buffer<FeedItem>(limit);
-                label afterLoop for (i in Iter.fromList(feed)) {
-                    if (i.hash == afterHash) {
-                        itemFound := true;
+    public query func getUnread(limit : Nat, after : ?Hash.Hash) : async [FeedItem] {
+        var skipTillFoundHash : ?Hash.Hash = after;
+        let resultItems = Buffer.Buffer<FeedItem>(limit);
+        Iter.iterate<Hash.Hash>(
+            Iter.fromList(unread),
+            func(itemHash, i) {
+                switch (skipTillFoundHash) {
+                    case (null) {
+                        // Already found hash or no hash
                     };
-                    if (itemFound) {
-                        itemsAfter.add(i);
-                        if (itemsAfter.size() >= limit) {
-                            break afterLoop;
+                    case (?a) {
+                        if (itemHash == a) {
+                            // Set to null to allow search
+                            // but still exclude this item
+                            skipTillFoundHash := null;
                         };
+                        // Skip to next item
+                        return;
                     };
                 };
-                if (itemFound) {
-                    return itemsAfter.toArray();
-                } else {
-                    // If item is not found then return normal feed
-                    // Usually due to item being removed from feed after reading
-                    feed;
+                let key = {
+                    hash = itemHash;
+                    key = itemHash;
                 };
-            };
+                let item : ?FeedItem = Trie.get(itemHashTree, key, Nat32.equal);
+                switch (item) {
+                    case (?i) {
+                        resultItems.add(i);
+                    };
+                    case (null) {
+                        // TODO will this case issues in the loop?
+                        unread := List.drop(unread, i);
+                    };
+                };
+            },
+        );
+        return resultItems.toArray();
+    };
+
+    public func markItemAsRead(hash : Hash.Hash, read : Bool) : async () {
+        let key = {
+            hash = hash;
+            key = hash;
         };
-        return List.toArray(List.take(l, limit));
+        if (Trie.get(itemHashTree, key, Nat32.equal) == null) {
+            // Skip if already removed
+            return;
+        };
+        if (read) {
+            // TODO order of the unread? date?
+            unread := List.push(hash, unread);
+        } else {
+            unread := List.filter<Hash.Hash>(
+                unread,
+                func(i) {
+                    i != hash;
+                },
+            );
+        };
+    };
+
+    public func saveItemForLater(hash : Hash.Hash) : async () {
+        let key = {
+            hash = hash;
+            key = hash;
+        };
+        if (Trie.get(itemHashTree, key, Nat32.equal) == null) {
+            // Skip if already removed
+            return;
+        };
+        savedForLater := List.push(hash, savedForLater);
     };
 };

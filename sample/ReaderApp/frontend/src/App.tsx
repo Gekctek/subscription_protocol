@@ -3,18 +3,13 @@ import './App.css';
 import { Component, Match, Switch } from 'solid-js';
 import LoginButton from './components/LoginButton';
 import { identity } from './api/Identity';
-import Feed, { feedResource } from './components/Feed';
-import { CircularProgress } from "@suid/material"
-import { loading } from './Signals';
+import Feed from './components/Feed';
 
 
 const App: Component = () => {
   return (
     <>
       <Switch fallback={<div>Oops...</div>}>
-        <Match when={loading()}>
-          <CircularProgress />
-        </Match>
         <Match when={identity() == null}>
           <div
             style={{
