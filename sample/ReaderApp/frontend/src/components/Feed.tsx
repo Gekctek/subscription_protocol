@@ -112,10 +112,11 @@ const Feed: Component = () => {
                         <Button onClick={() => previousFeedItem()}>Back</Button>
                         <Button onClick={() => saveItemForLater()}>Save for Later</Button>
                         <Button onClick={() => nextFeedItem()}>Next</Button>
+                        <Button onClick={() => nextFeedItem()}>Next</Button>
                     </div>
                 </div >
             </Match>
-            <Match when={(feedItems()?.length ?? 0) < feedIndex() + 1}>
+            <Match when={(feedItems()?.length ?? 0) < (feedIndex() + 1)}>
                 <div
                     style={{
                         display: 'flex',

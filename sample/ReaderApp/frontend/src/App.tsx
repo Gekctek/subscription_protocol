@@ -4,6 +4,7 @@ import { Component, Match, Switch } from 'solid-js';
 import LoginButton from './components/LoginButton';
 import { identity } from './api/Identity';
 import Feed from './components/Feed';
+import { page, Page } from './Signals';
 
 
 const App: Component = () => {
@@ -22,7 +23,14 @@ const App: Component = () => {
           </div>
         </Match>
         <Match when={identity() != null}>
-          <Feed />
+          <Switch>
+            <Match when={page() == Page.Home}>
+              <Feed />
+            </Match>
+            <Match when={page() == Page.Saved}>
+              <Feed />
+            </Match>
+          </Switch>
         </Match>
       </Switch>
     </>

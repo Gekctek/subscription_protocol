@@ -32,7 +32,7 @@ async function fetchFeed(feedActorInfo: FeedActorInfo | undefined, info: { value
     };
     let feedItemList = feedItems();
     let lastFeedItem = feedItemList ? feedItemList[-1] : null;
-    let items = await feedActorInfo.actor.getUnread(10, lastFeedItem ? [lastFeedItem.hash] : []);
+    let items = await feedActorInfo.actor.getUnread(10, lastFeedItem ? [lastFeedItem.id] : []);
     return items;
 };
 
@@ -52,7 +52,7 @@ export function nextFeedItem() {
     let feedItemList = feedItems();
     let feedItemValue = feedItemList ? feedItemList[feedIndexValue] : null;
     if (feedItemValue) {
-        feedActorInfo.actor.markItemAsRead(feedItemValue.hash);
+        feedActorInfo.actor.markItemAsRead(feedItemValue.id, true);
     }
 
     setFeedIndex(feedIndexValue + 1);
@@ -69,7 +69,7 @@ export function saveItemForLater() {
     let feedItemValue = feedItemList ? feedItemList[feedIndexValue] : null;
 
     if (feedItemValue) {
-        feedActorInfo.actor.saveItemForLater(feedItemValue.hash);
+        feedActorInfo.actor.saveItemForLater(feedItemValue.id);
     }
 };
 
@@ -81,4 +81,10 @@ export function previousFeedItem() {
     setFeedIndex(feedIndexValue - 1);
 };
 
+export enum Page {
+    Home,
+    Saved,
+    Archive
+};
 
+export const [page, setPage] = createSignal<Page>(Page.Home);

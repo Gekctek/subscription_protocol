@@ -7,7 +7,7 @@ import { ContentIDL, Content } from "./models/Content";
 export type FeedItemInfo = {
   channelId: string,
   content: Content,
-  hash: number
+  id: number
 };
 
 export type Result = [FeedItemInfo];
@@ -15,7 +15,7 @@ export type Result = [FeedItemInfo];
 export interface _SERVICE {
   'getUnread': ActorMethod<[number, [number] | []], FeedItemInfo[]>
   'saveItemForLater': ActorMethod<[number], void>,
-  'markItemAsRead': ActorMethod<[number], void>
+  'markItemAsRead': ActorMethod<[number, boolean], void>
 }
 
 
@@ -23,12 +23,12 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
   const GetUnreadResult = IDL.Vec(IDL.Record({
     channelId: IDL.Text,
     content: ContentIDL,
-    hash: IDL.Nat32
+    id: IDL.Nat32
   }));
   return IDL.Service({
     'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetUnreadResult], ["query"]),
     'saveItemForLater': IDL.Func([IDL.Nat32], [], ["oneway"]),
-    'markItemAsRead': IDL.Func([IDL.Nat32], [], ["oneway"]),
+    'markItemAsRead': IDL.Func([IDL.Nat32, IDL.Bool], [], ["oneway"]),
   });
 };
 
