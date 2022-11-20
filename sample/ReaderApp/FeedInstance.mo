@@ -1,3 +1,4 @@
+import Debug "mo:base/Debug";
 import Nat32 "mo:base/Nat32";
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
@@ -20,9 +21,12 @@ actor class FeedInstance(_owner : Principal) {
     type ItemId = Nat32;
 
     type FeedItem = {
-        id : ItemId; // TODO this vs hash?
         channelId : Text;
         content : Content.Content;
+    };
+
+    type FeedItemWithId = FeedItem and {
+        id : ItemId; // TODO this vs hash?
     };
 
     type ChannelInfo = {
@@ -40,13 +44,13 @@ actor class FeedInstance(_owner : Principal) {
 
     private stable var channels : Trie.Trie<Text, ChannelInfo> = Trie.empty();
 
-    private stable var unread : List.List<ItemId> = List.nil();
+    private stable var unread : List.List<FeedItemWithId> = List.nil();
 
-    private stable var savedForLater : List.List<ItemId> = List.nil();
+    private stable var savedForLater : List.List<FeedItemWithId> = List.nil();
 
-    private stable var itemHashTree : Trie.Trie<ItemId, FeedItem> = Trie.empty();
+    private stable var nextUnreadId : ItemId = 0;
 
-    private stable var nextId : ItemId = 0;
+    private stable var nextSavedId : ItemId = 0;
 
     private stable var owner : Principal = _owner;
 
@@ -54,19 +58,14 @@ actor class FeedInstance(_owner : Principal) {
 
         switch (update.message) {
             case (#newContent(c)) {
-                let newItem : FeedItem = {
-                    id = nextId;
+                // TODO validate caller
+                let newItem : FeedItemWithId = {
+                    id = nextUnreadId;
                     channelId = update.channelId;
                     content = c;
                 };
-                let key = {
-                    hash = nextId;
-                    key = nextId;
-                };
-                let (newItemHashTree, _) = Trie.put<ItemId, FeedItem>(itemHashTree, key, Nat32.equal, newItem);
-                itemHashTree := newItemHashTree;
-                unread := List.push(nextId, unread);
-                nextId += 1;
+                unread := List.push(newItem, unread);
+                nextUnreadId += 1;
             };
             case (#changeOwner(newOwner)) {
                 let channel : ChannelInfo = switch (validateCaller(caller, update.channelId)) {
@@ -145,18 +144,29 @@ actor class FeedInstance(_owner : Principal) {
     //     };
     // };
 
-    public query func getUnread(limit : Nat, afterItem : ?ItemId) : async [FeedItem] {
+    public shared query ({ caller }) func getUnread(limit : Nat, afterItem : ?ItemId) : async [FeedItemWithId] {
+        assert (caller == owner);
+        get(unread, limit, afterItem);
+    };
+
+    public shared query ({ caller }) func getSaved(limit : Nat, afterItem : ?ItemId) : async [FeedItemWithId] {
+        assert (caller == owner);
+        get(unread, limit, afterItem);
+    };
+
+    private func get(items : List.List<FeedItemWithId>, limit : Nat, afterItem : ?ItemId) : [FeedItemWithId] {
+
         var skipTillFoundId : ?ItemId = afterItem;
-        let resultItems = Buffer.Buffer<FeedItem>(limit);
-        Iter.iterate<ItemId>(
-            Iter.fromList(unread),
-            func(itemHash, i) {
+        let resultItems = Buffer.Buffer<FeedItemWithId>(limit);
+        Iter.iterate<FeedItemWithId>(
+            Iter.fromList(items),
+            func(item, i) {
                 switch (skipTillFoundId) {
                     case (null) {
                         // Already found hash or no hash
                     };
-                    case (?a) {
-                        if (itemHash == a) {
+                    case (?id) {
+                        if (item.id == id) {
                             // Set to null to allow search
                             // but still exclude this item
                             skipTillFoundId := null;
@@ -165,56 +175,35 @@ actor class FeedInstance(_owner : Principal) {
                         return;
                     };
                 };
-                let key = {
-                    hash = itemHash;
-                    key = itemHash;
-                };
-                let item : ?FeedItem = Trie.get(itemHashTree, key, Nat32.equal);
-                switch (item) {
-                    case (?i) {
-                        resultItems.add(i);
-                    };
-                    case (null) {
-                        // TODO will this case issues in the loop?
-                        unread := List.drop(unread, i);
-                    };
-                };
+                resultItems.add(item);
             },
         );
         return resultItems.toArray();
     };
 
-    public func markItemAsRead(id : ItemId) : async () {
-        let key = {
-            hash = id;
-            key = id;
-        };
-        if (Trie.get(itemHashTree, key, Nat32.equal) == null) {
-            // Skip if already removed
-            return;
-        };
-        unread := List.filter<ItemId>(
+    public shared ({ caller }) func markItemAsRead(id : ItemId) : async () {
+        assert (caller == owner);
+        unread := List.filter<FeedItemWithId>(
             unread,
             func(i) {
-                i != id;
+                i.id != id;
             },
         );
-        let isSaved = List.some<ItemId>(savedForLater, func(i) { i == id });
-        if (not isSaved) {
-            let (newItemHashTree, _) = Trie.remove(itemHashTree, key, Nat32.equal);
-            itemHashTree := newItemHashTree;
-        };
     };
 
-    public func saveItemForLater(id : ItemId) : async () {
-        let key = {
-            hash = id;
-            key = id;
-        };
-        if (Trie.get(itemHashTree, key, Nat32.equal) == null) {
-            // Skip if already removed
-            return;
-        };
-        savedForLater := List.push(id, savedForLater);
+    public shared ({ caller }) func saveItemForLater(item : FeedItem) : async () {
+        assert (caller == owner);
+        savedForLater := List.push({ item with id = nextSavedId }, savedForLater);
+        nextSavedId += 1;
+    };
+
+    public shared ({ caller }) func deleteSavedItem(id : ItemId) : async () {
+        assert (caller == owner);
+        savedForLater := List.filter<FeedItemWithId>(
+            savedForLater,
+            func(i) {
+                i.id != id;
+            },
+        );
     };
 };

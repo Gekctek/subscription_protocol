@@ -4,31 +4,43 @@ import type { Principal } from '@dfinity/principal';
 import { createActor } from "./ActorUtil";
 import { ContentIDL, Content } from "./models/Content";
 
+export type FeedItem = {
+  channelId: string,
+  content: Content
+};
+
 export type FeedItemInfo = {
   channelId: string,
   content: Content,
   id: number
 };
 
-export type Result = [FeedItemInfo];
 
 export interface _SERVICE {
-  'getUnread': ActorMethod<[number, [number] | []], FeedItemInfo[]>
-  'saveItemForLater': ActorMethod<[number], void>,
-  'markItemAsRead': ActorMethod<[number, boolean], void>
+  'getUnread': ActorMethod<[number, [number] | []], FeedItemInfo[]>,
+  'getSaved': ActorMethod<[number, [number] | []], FeedItemInfo[]>,
+  'saveItemForLater': ActorMethod<[FeedItem], void>,
+  'deleteSavedItem': ActorMethod<[number], void>,
+  'markItemAsRead': ActorMethod<[number], void>
 }
 
 
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
-  const GetUnreadResult = IDL.Vec(IDL.Record({
+  const GetResult = IDL.Vec(IDL.Record({
     channelId: IDL.Text,
     content: ContentIDL,
     id: IDL.Nat32
   }));
+  const FeedItem = IDL.Record({
+    channelId: IDL.Text,
+    content: ContentIDL
+  });
   return IDL.Service({
-    'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetUnreadResult], ["query"]),
-    'saveItemForLater': IDL.Func([IDL.Nat32], [], ["oneway"]),
-    'markItemAsRead': IDL.Func([IDL.Nat32, IDL.Bool], [], ["oneway"]),
+    'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),
+    'getSaved': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),
+    'saveItemForLater': IDL.Func([FeedItem], [], []),
+    'deleteSavedItem': IDL.Func([IDL.Nat32], [], ["oneway"]),
+    'markItemAsRead': IDL.Func([IDL.Nat32], [], ["oneway"]),
   });
 };
 

@@ -26,36 +26,52 @@ export const [feedActor, feedActorResource] = createResource<FeedActorInfo | und
 
 
 
-async function fetchFeed(feedActorInfo: FeedActorInfo | undefined, info: { value: FeedItemInfo[] | undefined; refetching: boolean | unknown }): Promise<FeedItemInfo[]> {
+async function fetchUnread(feedActorInfo: FeedActorInfo | undefined, info: { value: FeedItemInfo[] | undefined; refetching: boolean | unknown }): Promise<FeedItemInfo[]> {
     if (!feedActorInfo) {
         return [];
     };
-    let feedItemList = feedItems();
-    let lastFeedItem = feedItemList ? feedItemList[-1] : null;
+    let unreadList = unreadItems();
+    // TODO dont always get the full next set?
+    sdfsadfsdf
+    let lastFeedItem = unreadList ? unreadList[-1] : null;
     let items = await feedActorInfo.actor.getUnread(10, lastFeedItem ? [lastFeedItem.id] : []);
     return items;
 };
 
-export const [feedItems, feedResource] = createResource(feedActor, fetchFeed);
+export const [unreadItems, unreadResource] = createResource(feedActor, fetchUnread);
 
-export const [feedIndex, setFeedIndex] = createSignal<number>(0)
+export const [unreadIndex, setUnreadIndex] = createSignal<number>(0);
+
+async function fetchSaved(feedActorInfo: FeedActorInfo | undefined, info: { value: FeedItemInfo[] | undefined; refetching: boolean | unknown }): Promise<FeedItemInfo[]> {
+    if (!feedActorInfo) {
+        return [];
+    };
+    let savedList = savedItems();
+    // TODO dont always get the full next set?
+    dfasdfsadfasdf
+    let lastFeedItem = savedList ? savedList[-1] : null;
+    let items = await feedActorInfo.actor.getSaved(10, lastFeedItem ? [lastFeedItem.id] : []);
+    return savedList ? savedList.concat(items) : items;
+};
+
+export const [savedItems, savedResource] = createResource(feedActor, fetchSaved);
 
 
-export function nextFeedItem() {
+export function nextUnread() {
     let feedActorInfo = feedActor();
     if (!feedActorInfo) {
         return;
     }
 
-    let feedIndexValue = feedIndex();
+    let unreadIndexValue = unreadIndex();
 
-    let feedItemList = feedItems();
-    let feedItemValue = feedItemList ? feedItemList[feedIndexValue] : null;
+    let unreadList = unreadItems();
+    let feedItemValue = unreadList ? unreadList[unreadIndexValue] : null;
     if (feedItemValue) {
-        feedActorInfo.actor.markItemAsRead(feedItemValue.id, true);
+        feedActorInfo.actor.markItemAsRead(feedItemValue.id);
     }
 
-    setFeedIndex(feedIndexValue + 1);
+    setUnreadIndex(unreadIndexValue + 1);
 };
 
 export function saveItemForLater() {
@@ -63,22 +79,32 @@ export function saveItemForLater() {
     if (!feedActorInfo) {
         return;
     }
-    let feedIndexValue = feedIndex();
+    let unreadIndexValue = unreadIndex();
 
-    let feedItemList = feedItems();
-    let feedItemValue = feedItemList ? feedItemList[feedIndexValue] : null;
+    let unreadList = unreadItems();
+    let feedItemValue = unreadList ? unreadList[unreadIndexValue] : null;
 
     if (feedItemValue) {
-        feedActorInfo.actor.saveItemForLater(feedItemValue.id);
+        feedActorInfo.actor.saveItemForLater(feedItemValue);
     }
 };
 
-export function previousFeedItem() {
-    let feedIndexValue = feedIndex();
-    if (feedIndexValue < 1) {
+export function deleteSavedItem(id: number) {
+    let feedActorInfo = feedActor();
+    if (!feedActorInfo) {
         return;
     }
-    setFeedIndex(feedIndexValue - 1);
+    feedActorInfo.actor.deleteSavedItem(id);
+    let savedItemList = savedItems()?.filter((i) => i.id != id) ?? [];
+    savedResource.mutate(savedItemList);
+};
+
+export function previousUnread() {
+    let unreadIndexValue = unreadIndex();
+    if (unreadIndexValue < 1) {
+        return;
+    }
+    setUnreadIndex(unreadIndexValue - 1);
 };
 
 export enum Page {

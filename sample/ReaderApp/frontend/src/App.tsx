@@ -5,6 +5,7 @@ import LoginButton from './components/LoginButton';
 import { identity } from './api/Identity';
 import Feed from './components/Feed';
 import { page, Page } from './Signals';
+import SavedItems from './components/SavedItems';
 
 
 const App: Component = () => {
@@ -28,7 +29,7 @@ const App: Component = () => {
               <Feed />
             </Match>
             <Match when={page() == Page.Saved}>
-              <Feed />
+              <SavedItems />
             </Match>
           </Switch>
         </Match>
