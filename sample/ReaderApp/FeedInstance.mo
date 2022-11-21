@@ -191,13 +191,17 @@ actor class FeedInstance(_owner : Principal) {
         );
     };
 
-    public shared ({ caller }) func saveItemForLater(item : FeedItem) : async () {
+    public shared ({ caller }) func saveItemForLater(item : FeedItem) : async {
+        #ok : ItemId;
+    } {
         assert (caller == owner);
-        savedForLater := List.push({ item with id = nextSavedId }, savedForLater);
+        let newSavedItem = { item with id = nextSavedId };
+        savedForLater := List.push(newSavedItem, savedForLater);
         nextSavedId += 1;
+        #ok(newSavedItem.id);
     };
 
-    public shared ({ caller }) func deleteSavedItem(id : ItemId) : async () {
+    public shared ({ caller }) func deleteSavedItem(id : ItemId) : async { #ok } {
         assert (caller == owner);
         savedForLater := List.filter<FeedItemWithId>(
             savedForLater,
@@ -205,5 +209,6 @@ actor class FeedInstance(_owner : Principal) {
                 i.id != id;
             },
         );
+        #ok();
     };
 };

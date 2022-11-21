@@ -19,8 +19,8 @@ export type FeedItemInfo = {
 export interface _SERVICE {
   'getUnread': ActorMethod<[number, [number] | []], FeedItemInfo[]>,
   'getSaved': ActorMethod<[number, [number] | []], FeedItemInfo[]>,
-  'saveItemForLater': ActorMethod<[FeedItem], void>,
-  'deleteSavedItem': ActorMethod<[number], void>,
+  'saveItemForLater': ActorMethod<[FeedItem], { 'ok': number }>,
+  'deleteSavedItem': ActorMethod<[number], { 'ok': null }>,
   'markItemAsRead': ActorMethod<[number], void>
 }
 
@@ -35,11 +35,13 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     channelId: IDL.Text,
     content: ContentIDL
   });
+  const SaveResult = IDL.Variant({ ok: IDL.Nat32 });
+  const DeleteResult = IDL.Variant({ ok: IDL.Null });
   return IDL.Service({
     'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),
     'getSaved': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),
-    'saveItemForLater': IDL.Func([FeedItem], [], []),
-    'deleteSavedItem': IDL.Func([IDL.Nat32], [], ["oneway"]),
+    'saveItemForLater': IDL.Func([FeedItem], [SaveResult], []),
+    'deleteSavedItem': IDL.Func([IDL.Nat32], [DeleteResult], []),
     'markItemAsRead': IDL.Func([IDL.Nat32], [], ["oneway"]),
   });
 };

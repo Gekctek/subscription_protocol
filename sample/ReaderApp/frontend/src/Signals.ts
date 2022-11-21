@@ -105,9 +105,14 @@ export async function saveItemForLater() {
     let feedItemValue = unreadList ? unreadList[unreadIndexValue] : null;
 
     if (feedItemValue) {
+        // Move from feed to saved
+        unreadResource.mutate(unreadList!.filter(u => u.id != feedItemValue!.id))
+        feedActorInfo.actor.markItemAsRead(feedItemValue.id);
+        feedItemValue.id = -1; // Id is no longer this
         let savedList = savedItems() ?? [];
         savedResource.mutate(savedList.concat([feedItemValue]));
-        await feedActorInfo.actor.saveItemForLater(feedItemValue);
+        let response = await feedActorInfo.actor.saveItemForLater(feedItemValue);
+        feedItemValue.id = response.ok; // Reset the id to new one
     }
 };
 
@@ -136,3 +141,19 @@ export enum Page {
 };
 
 export const [page, setPage] = createSignal<Page>(Page.Home);
+
+export function gotoPage(page: Page) {
+    switch (page) {
+        case Page.Home:
+            if (((unreadItems()?.length ?? 0) - unreadIndex()) < 1) {
+                unreadResource.refetch();
+            };
+            break;
+        case Page.Saved:
+            if ((savedItems()?.length ?? 0) < 1) {
+                savedResource.refetch();
+            };
+            break;
+    };
+    setPage(page);
+}

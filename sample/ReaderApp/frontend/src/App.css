@@ -3,6 +3,7 @@ body {
   color: rgb(232, 230, 227);
   max-width: 600px;
   margin: auto auto;
+  font-family: 'Roboto', sans-serif;
 }
 
 a {

@@ -1,16 +1,31 @@
 import { Component, Match, Switch, For, createMemo } from 'solid-js';
-import { deleteSavedItem, Page, savedItems, savedResource, selectedSavedItem, setPage, setSelectedSavedItem, unreadItems, unreadResource } from '../Signals';
+import { deleteSavedItem, gotoPage, Page, savedItems, savedResource, selectedSavedItem, setSelectedSavedItem, unreadIndex, unreadItems, unreadResource } from '../Signals';
 import { Badge, CircularProgress, Divider, Fab, List, ListItem, ListItemButton, ListItemText } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
-import { RssFeed } from '@suid/icons-material';
+import { ArrowBackIosNew, RssFeed } from '@suid/icons-material';
 import RefreshIcon from '@suid/icons-material/Refresh';
 import ArticleIcon from '@suid/icons-material/Article';
-import End from './End';
+import End from './EndContent';
 import NavWrapper from './NavWrapper';
 import Item from './Item';
 
 
 const SavedItems: Component = () => {
+    let backToSavedButton = createMemo(() => {
+        return {
+            icon: <ArrowBackIosNew />,
+            onClick: () => setSelectedSavedItem(null)
+        }
+    });
+    let deleteSavedButton = createMemo(() => {
+        return {
+            icon: <DeleteIcon />,
+            onClick: async () => {
+                deleteSavedItem(selectedSavedItem()!.id);
+                setSelectedSavedItem(null);
+            }
+        }
+    });
     let refreshButton = createMemo(() => {
         return {
             icon: <RefreshIcon />,
@@ -19,27 +34,24 @@ const SavedItems: Component = () => {
     });
     let unreadPageButton = createMemo(() => {
         return {
-            icon: <Badge badgeContent={unreadItems()?.length} color="primary">
+            icon: <Badge badgeContent={(unreadItems()?.length ?? 0) - unreadIndex()} color="primary">
                 <RssFeed />
             </Badge>,
-            onClick: () => setPage(Page.Home)
+            onClick: () => gotoPage(Page.Home)
         }
     });
     return (
         <Switch>
-            <Match when={savedItems.loading}>
-                <div
-                    style={{
-                        display: 'flex',
-                        'justify-content': 'center',
-                        'align-items': 'center',
-                        height: '100%'
-                    }}>
-                    <CircularProgress />
-                </div>
-            </Match>
             <Match when={!!selectedSavedItem()}>
-                <Item value={selectedSavedItem()!} />
+                <NavWrapper
+                    navButtons={[
+                        backToSavedButton(),
+                        deleteSavedButton(),
+                        null,
+                        null
+                    ]}>
+                    <Item value={selectedSavedItem()!} />
+                </NavWrapper>
             </Match>
             <Match when={(savedItems()?.length ?? 0) > 0}>
                 <NavWrapper
@@ -53,14 +65,28 @@ const SavedItems: Component = () => {
                         <h1>Saved:</h1>
                         <List>
                             <For each={savedItems()} >
-                                {(item) =>
+                                {(item, i) =>
                                     <>
-                                        <ListItem disablePadding>
+                                        <ListItem disablePadding style={{
+                                            "background-color": i() % 2 == 0 ? "inherit" : "rgb(34, 36, 38)"
+                                        }}>
                                             <ListItemButton onClick={() => setSelectedSavedItem(item)}>
-                                                <ListItemText primary={item.content.title} />
-                                            </ListItemButton>
-                                            <ListItemButton onClick={() => deleteSavedItem(item.id)}>
-                                                <DeleteIcon />
+                                                <div style={{
+                                                    display: 'flex',
+                                                    'flex-direction': i() % 2 == 0 ? 'row' : 'row-reverse',
+                                                    'flex-wrap': 'nowrap',
+                                                    'align-items': 'center'
+                                                }}>
+                                                    <img
+                                                        style={{
+                                                            "max-width": "150px",
+                                                            "max-height": "150px",
+                                                            "margin": i() % 2 == 0 ? "0 10px 0 0" : "0 0 0 10px"
+                                                        }}
+                                                        src={item.content.imageLink}
+                                                        alt="Content Image" />
+                                                    <div>{item.content.title}</div>
+                                                </div>
                                             </ListItemButton>
                                         </ListItem>
                                         <Divider />
