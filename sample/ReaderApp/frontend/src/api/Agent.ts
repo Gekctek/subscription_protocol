@@ -1,7 +1,8 @@
 import { AnonymousIdentity, HttpAgent } from "@dfinity/agent";
+import { boundryNodeUrl } from "./CanisterIds";
 import { identity } from "./Identity";
 
 export const agent = new HttpAgent({
-    host: "http://localhost:4943", // TODO config
+    host: boundryNodeUrl, // TODO config
     identity: identity() ?? new AnonymousIdentity()
 });
