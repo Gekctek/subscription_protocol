@@ -1,21 +1,57 @@
-import { children, Component, JSX } from 'solid-js';
-import { Paper } from "@suid/material"
+import { Component, Show } from 'solid-js';
+import { FeedItemInfo } from '../api/FeedActor';
 
+type Props = { value: FeedItemInfo };
 
-type CardProps = {
-    children: JSX.Element
-};
-
-const Card: Component<CardProps> = (props: CardProps) => {
-    const resolvedChildren = children(() => props.children);
+const Item: Component<Props> = (props: Props) => {
+    let channel = {
+        id: props.value.channelId,
+        name: props.value.channelId
+    }; // TODO lookup channel
     return (
-        <Paper style={{ 'min-height': '100%' }}>
-            {resolvedChildren()}
-        </Paper>
+        <div style={{ 'min-height': '100%' }}>
+            <div style={{
+                height: "100%",
+                "text-align": "start",
+                padding: "20px"
+            }}>
+                <div style={{
+                    "font-size": "24px",
+                    margin: "0 0 8px 0"
+                }}>
+                    <a href={props.value.content.link}>
+                        {props.value.content.title}
+                    </a>
+                </div>
+                <div style={{
+                    "font-size": "13px",
+                    color: "rgb(152, 144, 130)",
+                    margin: "0 0 8px 0"
+                }}>
+                    <a href='#' style={{
+                        color: "#6f6f6f"
+                    }}>
+                        {channel.name}
+                    </a>
+                    <span>{props.value.content.date}</span>
+                </div>
+
+                <Show when={props.value.content.imageLink}>
+                    <div style={{
+                        margin: "0 0 8px 0"
+                    }}>
+                        <img src={props.value.content.imageLink} alt="Content Image" />
+                    </div>
+                </Show>
+                <div style={{}}>
+                    <div>{props.value.content.description}</div>
+                </div>
+            </div >
+        </div>
     );
 };
 
-export default Card;
+export default Item;
 
 // const Cardz = ({ image, color }) => {
 //     // To move the card as the user drags the cursor

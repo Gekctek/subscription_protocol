@@ -1,8 +1,23 @@
 body {
   background-color: rgb(34, 36, 38);
   color: rgb(232, 230, 227);
+  max-width: 600px;
+  margin: auto auto;
 }
 
 a {
   color: inherit;
+}
+
+div::-webkit-scrollbar {
+  width: .25em;
+}
+
+div::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+div::-webkit-scrollbar-thumb {
+  background-color: darkgrey;
+  outline: 1px solid slategrey;
 }

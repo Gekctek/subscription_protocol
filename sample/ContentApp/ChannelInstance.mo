@@ -15,7 +15,6 @@ actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
     private type Post = {
         title : Text;
         description : Text;
-        body : Text;
         link : Text;
         imageLink : ?Text;
     };

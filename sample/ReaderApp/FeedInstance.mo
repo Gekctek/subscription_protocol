@@ -151,7 +151,7 @@ actor class FeedInstance(_owner : Principal) {
 
     public shared query ({ caller }) func getSaved(limit : Nat, afterItem : ?ItemId) : async [FeedItemWithId] {
         assert (caller == owner);
-        get(unread, limit, afterItem);
+        get(savedForLater, limit, afterItem);
     };
 
     private func get(items : List.List<FeedItemWithId>, limit : Nat, afterItem : ?ItemId) : [FeedItemWithId] {

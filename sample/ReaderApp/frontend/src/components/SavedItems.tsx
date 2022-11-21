@@ -1,13 +1,30 @@
-import { Component, Match, Switch, For } from 'solid-js';
-import { deleteSavedItem, Page, savedItems, savedResource, setPage, unreadResource } from '../Signals';
-import { CircularProgress, Fab } from "@suid/material"
+import { Component, Match, Switch, For, createMemo } from 'solid-js';
+import { deleteSavedItem, Page, savedItems, savedResource, selectedSavedItem, setPage, setSelectedSavedItem, unreadItems, unreadResource } from '../Signals';
+import { Badge, CircularProgress, Divider, Fab, List, ListItem, ListItemButton, ListItemText } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
 import { RssFeed } from '@suid/icons-material';
 import RefreshIcon from '@suid/icons-material/Refresh';
+import ArticleIcon from '@suid/icons-material/Article';
 import End from './End';
+import NavWrapper from './NavWrapper';
+import Item from './Item';
 
 
 const SavedItems: Component = () => {
+    let refreshButton = createMemo(() => {
+        return {
+            icon: <RefreshIcon />,
+            onClick: () => savedResource.refetch()
+        }
+    });
+    let unreadPageButton = createMemo(() => {
+        return {
+            icon: <Badge badgeContent={unreadItems()?.length} color="primary">
+                <RssFeed />
+            </Badge>,
+            onClick: () => setPage(Page.Home)
+        }
+    });
     return (
         <Switch>
             <Match when={savedItems.loading}>
@@ -21,32 +38,59 @@ const SavedItems: Component = () => {
                     <CircularProgress />
                 </div>
             </Match>
+            <Match when={!!selectedSavedItem()}>
+                <Item value={selectedSavedItem()!} />
+            </Match>
             <Match when={(savedItems()?.length ?? 0) > 0}>
-                <h1>Saved:</h1>
-                <For each={savedItems()} >
-                    {(item) => <div>
-                        <h1>{item.content.title}</h1>
-                        <DeleteIcon onClick={() => deleteSavedItem(item.id)} />
-                    </div>}
-                </For>
-            </Match>
+                <NavWrapper
+                    navButtons={[
+                        null,
+                        null,
+                        refreshButton(),
+                        unreadPageButton()
+                    ]}>
+                    <>
+                        <h1>Saved:</h1>
+                        <List>
+                            <For each={savedItems()} >
+                                {(item) =>
+                                    <>
+                                        <ListItem disablePadding>
+                                            <ListItemButton onClick={() => setSelectedSavedItem(item)}>
+                                                <ListItemText primary={item.content.title} />
+                                            </ListItemButton>
+                                            <ListItemButton onClick={() => deleteSavedItem(item.id)}>
+                                                <DeleteIcon />
+                                            </ListItemButton>
+                                        </ListItem>
+                                        <Divider />
+                                    </>}
+                            </For>
+                        </List>
+                    </>
+                </NavWrapper>
+
+            </Match >
             <Match when={(savedItems()?.length ?? 0) < 1}>
-                <End name='Saved'
-                    buttons={[
-                        {
-                            icon: <RefreshIcon />,
-                            onClick: () => savedResource.refetch()
-                        },
-                        {
-                            icon: <RssFeed />,
-                            onClick: () => {
-                                unreadResource.refetch();
-                                setPage(Page.Home);
-                            }
+                <NavWrapper
+                    navButtons={[
+                        null,
+                        null,
+                        refreshButton(),
+                        unreadPageButton()
+                    ]} >
+                    <End
+                        name='Saved'
+                        icon={
+                            <ArticleIcon style={{
+                                'font-size': '200px'
+                            }} />
                         }
-                    ]} />
+                    />
+                </NavWrapper>
+
             </Match>
-        </Switch>
+        </Switch >
 
     );
 };

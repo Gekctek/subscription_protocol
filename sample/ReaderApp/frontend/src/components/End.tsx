@@ -2,18 +2,15 @@
 import WbSunnyIcon from '@suid/icons-material/WbSunny';
 import { Fab } from '@suid/material';
 import { Component, For, JSXElement } from 'solid-js';
+import NavWrapper, { ButtonInfo } from './NavWrapper';
 
-type ButtonInfo = {
-    icon: JSXElement,
-    onClick: () => any;
-};
 
 type Props = {
     name: string,
-    buttons: ButtonInfo[]
+    icon: JSXElement
 };
 
-const End: Component<Props> = (props: Props) => {
+const EndContent: Component<Props> = (props: Props) => {
 
     return (
         <div
@@ -25,28 +22,15 @@ const End: Component<Props> = (props: Props) => {
                 height: '100%'
             }}>
             <div>
-                <WbSunnyIcon style={{
-                    'font-size': '200px'
-                }} />
+                {props.icon}
             </div>
             <div style={{
                 "font-size": '50px'
             }}>
-                No More {props.name}.
-            </div>
-            <div>
-                <For each={props.buttons}>
-                    {(b) => <Fab onClick={b.onClick} style={{
-                        margin: '20px'
-                    }}>
-                        {b.icon}
-                    </Fab>
-                    }
-                </For>
+                0 {props.name}
             </div>
         </div>
-
     );
 };
 
-export default End;
+export default EndContent;
