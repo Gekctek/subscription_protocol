@@ -164,6 +164,7 @@ actor class FeedInstance(_owner : Principal) {
                 switch (skipTillFoundId) {
                     case (null) {
                         // Already found hash or no hash
+                        resultItems.add(item);
                     };
                     case (?id) {
                         if (item.id == id) {
@@ -171,11 +172,9 @@ actor class FeedInstance(_owner : Principal) {
                             // but still exclude this item
                             skipTillFoundId := null;
                         };
-                        // Skip to next item
-                        return;
+                        // Don't add to result because this item is excluded
                     };
                 };
-                resultItems.add(item);
             },
         );
         return resultItems.toArray();
@@ -196,7 +195,7 @@ actor class FeedInstance(_owner : Principal) {
     } {
         assert (caller == owner);
         let newSavedItem = { item with id = nextSavedId };
-        savedForLater := List.push(newSavedItem, savedForLater);
+        savedForLater := List.append(savedForLater, ?(newSavedItem, null));
         nextSavedId += 1;
         #ok(newSavedItem.id);
     };

@@ -35,6 +35,10 @@ async function fetchUnread(feedActorInfo: FeedActorInfo | undefined, info: { val
         // Optimization: Dont get more if have more than min
         return info.value!;
     }
+    if (unreadItemCount < 1) {
+        setUnreadIndex(0);
+        info.value = [];
+    }
 
     return await fetchInternal(feedActorInfo, info, (i) => {
         return i.actor.getUnread
@@ -65,7 +69,7 @@ async function fetchInternal(
         lastFeedItem = info.value[info.value.length - 1];
     }
     let items = await getFunc(feedActorInfo)(minItems, lastFeedItem ? [lastFeedItem.id] : []);
-    if (!info.value) {
+    if (!info.value || !lastFeedItem) {
         return items;
     }
     return info.value.concat(items);
