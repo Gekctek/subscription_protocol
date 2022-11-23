@@ -8,7 +8,10 @@ module {
 
     public type Content = {
         title : Text;
-        description : Text;
+        body : {
+            format : ?Text;
+            value : Text;
+        };
         link : Text;
         authors : [Author];
         imageLink : ?Text;

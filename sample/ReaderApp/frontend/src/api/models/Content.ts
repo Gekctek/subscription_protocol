@@ -9,7 +9,10 @@ export const AuthorIDL = IDL.Variant({
 
 export const ContentIDL = IDL.Record({
   title: IDL.Text,
-  description: IDL.Text,
+  body: IDL.Record({
+    format: IDL.Opt(IDL.Text),
+    value: IDL.Text
+  }),
   link: IDL.Text,
   authors: IDL.Vec(AuthorIDL),
   imageLink: IDL.Opt(IDL.Text),
@@ -28,7 +31,10 @@ export type Author = {
 
 export type Content = {
   title: string,
-  description: string,
+  body: {
+    format?: string,
+    value: string
+  },
   link: string,
   authors: [Author],
   imageLink?: string,

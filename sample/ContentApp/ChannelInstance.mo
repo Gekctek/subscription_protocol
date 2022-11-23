@@ -70,7 +70,10 @@ actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
                 link = post.link; // TODO
                 authors = [];
                 date = Time.now();
-                description = post.description;
+                body = {
+                    format = null;
+                    value = post.description;
+                };
                 imageLink = post.imageLink;
                 language = ?"en-us";
             });

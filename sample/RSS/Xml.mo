@@ -1,3 +1,4 @@
+import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
 import Text "mo:base/Text";
@@ -11,7 +12,12 @@ module {
     public type Node = {
         name : Text;
         attributes : [Attribute];
-        children : { #selfClosing; #open : [Node] };
+        children : { #selfClosing; #open : [NodeOrText] };
+    };
+
+    public type NodeOrText = {
+        #node : Node;
+        #text : Text;
     };
 
     public type Attribute = {
@@ -19,27 +25,118 @@ module {
         value : ?Text;
     };
 
-    public func parseFileBytes(bytes : Blob) : ?File {
-        // TODO optimize
-        let contents : ?Text = Text.decodeUtf8(bytes);
-        switch (contents) {
-            case (null) {
-                null;
+    public func parseFileBytes(bytes : Blob) : {
+        #ok : File;
+        #err : { reader : UTF8Reader; tokens : [XMLToken] };
+    } {
+        let reader = UTF8Reader(bytes);
+        switch (parseFileText(reader)) {
+            case (#err(tokens)) #err({ reader = reader; tokens = tokens });
+            case (#ok(f)) #ok(f);
+        };
+    };
+
+    public func parseFileText(reader : UTF8Reader) : {
+        #ok : File;
+        #err : [XMLToken];
+    } {
+        let xmlReader = XMLReader(reader);
+        let tokens : [XMLToken] = switch (xmlReader.get()) {
+            case (#ok(t)) t;
+            case (#err(t)) return #err(t);
+        };
+        let a = do ? {
+            if (tokens.size() < 2) {
+                return #err(tokens);
             };
-            case (?c) {
-                parseFileText(c);
+            let tokenIter = Iter.fromArray(tokens);
+            let headerTag = switch (tokenIter.next()!) {
+                case (#text(txt)) {
+                    return #err(tokens); // Invalid
+                };
+                case (#tag(tag)) tag;
+            };
+            let version : Text = switch (Array.find<Attribute>(headerTag.attributes, func(a) { a.name == "version" })) {
+                case (null) return #err(tokens); // TODO default version?
+                case (?v) v.value!;
+            };
+            let encoding : Text = switch (Array.find<Attribute>(headerTag.attributes, func(a) { a.name == "encoding" })) {
+                case (null) return #err(tokens); // TODO default encoding?
+                case (?v) v.value!;
+            };
+            let root = switch (buildXml(tokenIter)) {
+                case (null) return #err(tokens);
+                case (?#node(n)) n;
+                case (?#text(t)) return #err(tokens);
+            };
+            {
+                version = version;
+                encoding = encoding;
+                root = root;
+            };
+        };
+        switch (a) {
+            case (null) #err(tokens);
+            case (?a) #ok(a);
+        };
+    };
+
+    private func buildXml(i : Iter.Iter<XMLToken>) : ?NodeOrText {
+        do ? {
+            switch (i.next()) {
+                case (?#tag(tag)) {
+                    return ?#node(buildNode(i, tag)!);
+                };
+                case (?#text(txt)) {
+                    return ?#text(txt);
+                };
+                case (null) {
+                    return null;
+                };
             };
         };
     };
 
-    private func parseFileText(reader : UTF8Reader) : ?File {
+    private func buildNode(i : Iter.Iter<XMLToken>, startTag : Tag) : ?Node {
         do ? {
-            let xmlReader = XMLReader(reader);
-            let tokens : [XMLToken] = xmlReader.get()!;
-            return {
-                version =;
-                encoding =;
-                root =;
+            switch (startTag.style) {
+                case (#closing) return null;
+                case (#selfClosing) return ?{
+                    name = startTag.name;
+                    attributes = startTag.attributes;
+                    children = #selfClosing;
+                };
+                case (#opening) {
+                    let children = Buffer.Buffer<NodeOrText>(1);
+                    label l loop {
+                        let next = i.next()!;
+                        switch (next) {
+                            case (#tag(tag)) {
+                                let n = switch (tag.style) {
+                                    case (#opening or #selfClosing) {
+                                        buildNode(i, tag)!;
+                                    };
+                                    case (#closing) {
+                                        if (tag.name == startTag.name) {
+                                            // Tag is closed
+                                            break l;
+                                        };
+                                        return null; // Invalid
+                                    };
+                                };
+                                children.add(#node(n));
+                            };
+                            case (#text(t)) {
+                                children.add(#text(t));
+                            };
+                        };
+                    };
+                    return ?{
+                        name = startTag.name;
+                        attributes = startTag.attributes;
+                        children = #open(children.toArray());
+                    };
+                };
             };
         };
     };
@@ -57,34 +154,39 @@ module {
 
     public class XMLReader(reader : UTF8Reader) {
 
-        public func get() : ?[XMLToken] {
-            do ? {
-                let tokenBuffer = Buffer.Buffer<XMLToken>(1);
-                let textBuffer = Buffer.Buffer<Char>(1);
-                label main loop {
-                    reader.skipWhitespace();
-                    let c : ?Char = reader.peek();
-                    switch (c) {
-                        case (null or ?'<') {
-                            if (textBuffer.size() > 0) {
-                                tokenBuffer.add(#text(Text.fromIter(textBuffer.vals())));
+        public func get() : { #ok : [XMLToken]; #err : [XMLToken] } {
+            let tokenBuffer = Buffer.Buffer<XMLToken>(1);
+            let textBuffer = Buffer.Buffer<Char>(1);
+            loop {
+                let c : ?Char = reader.peek();
+                switch (c) {
+                    case (null) {
+                        return #ok(tokenBuffer.toArray());
+                    };
+                    case (?'<') {
+                        if (textBuffer.size() > 0) {
+                            // Trim whitespace
+                            let text = Text.trim(Text.fromIter(textBuffer.vals()), #predicate(func(c : Char) { isWhitespace(?c) }));
+                            if (text.size() > 0) {
+                                tokenBuffer.add(#text(text));
                             };
-                            if (c != null) {
-                                let tag = getTag()!;
-                                tokenBuffer.add(#tag(tag));
-                            };
+                            textBuffer.clear();
                         };
-                        case (?c) {
-                            let _ = reader.next();
-                            textBuffer.add(c);
+                        let tag = getTag(tokenBuffer);
+                        switch (tag) {
+                            case (null) return #err(tokenBuffer.toArray());
+                            case (?t) tokenBuffer.add(#tag(t));
                         };
                     };
+                    case (?c) {
+                        let _ = reader.next();
+                        textBuffer.add(c);
+                    };
                 };
-                tokenBuffer.toArray();
             };
         };
 
-        private func getTag() : ?Tag {
+        private func getTag(tokenBuffer : Buffer.Buffer<XMLToken>) : ?Tag {
             do ? {
                 let open = reader.next()!;
                 if (open != '<') {
@@ -97,9 +199,13 @@ module {
                 let name : Text = reader.nextWord()!;
                 let inText = false;
                 var previousChar : ?Char = null;
+
+                let attributesBuffer = Buffer.Buffer<Attribute>(0);
                 label main loop {
+                    reader.skipWhitespace();
                     let c : Char = reader.peek()!;
                     if (c == '>') {
+                        let _ = reader.next()!; // read the peek
                         let style = switch (previousChar) {
                             case (?'/') #selfClosing;
                             case (p) {
@@ -108,10 +214,30 @@ module {
                         };
                         return ?{
                             name = name;
-                            attributes = []; // TODO
+                            attributes = attributesBuffer.toArray();
                             style = style;
                         };
+                    } else if (c == '/' or c == '?') {
+                        let _ = reader.next();
+                        //Skip
+                    } else {
+                        let attributeText = reader.nextWord()!;
+                        let splitValues : Iter.Iter<Text> = Text.split(attributeText, #char('='));
+                        let attributeName = splitValues.next()!;
+                        let quoteChar = Text.toIter("\"").next()!; // TODO how to do '\"'??
+                        let attributeValue : ?Text = switch (splitValues.next()) {
+                            case (null) null;
+                            case (?v) ?Text.trim(v, #char(quoteChar)); // Trim quotes
+                        };
+                        if (splitValues.next() != null) {
+                            return null; // Should only be 1 or 2 values
+                        };
+                        attributesBuffer.add({
+                            name = attributeName;
+                            value = attributeValue;
+                        });
                     };
+                    previousChar := reader.current();
                 };
                 return null;
             };
@@ -125,6 +251,11 @@ module {
             case (?v) Text.toIter(v);
         };
         var peekCache : ?Char = null;
+        var currentValue : ?Char = null;
+
+        public func current() : ?Char {
+            currentValue;
+        };
 
         public func peek() : ?Char {
             if (peekCache == null) {
@@ -140,24 +271,37 @@ module {
                 let next = peekCache;
                 // clear cache since it moved to next
                 peekCache := null;
+                currentValue := next;
                 next;
             };
         };
 
         public func nextWord() : ?Text {
+            var inQuotes = false;
             do ? {
                 let wordBuffer = Buffer.Buffer<Char>(1);
                 loop {
                     let p = peek();
-                    if (p == null or isWhitespace(p)) {
+                    if (p == null or (not inQuotes and (isWhitespace(p) or p == ?'<' or p == ?'>' or p == ?'/' or p == ?'?'))) {
                         if (wordBuffer.size() > 0) {
                             // Return word
                             return ?Text.fromIter(wordBuffer.vals());
                         };
-                        if (p == null) {
-                            return null; // No word
+                        switch (p) {
+                            case (null) return null;
+                            case (?p) return ?Text.fromChar(p);
                         };
-                        // Skip whitespace
+                    } else {
+                        let quoteChar = Text.toIter("\"").next(); // TODO how to do '\"'??
+                        wordBuffer.add(next()!);
+                        if (p == quoteChar) {
+                            if (not inQuotes) {
+                                inQuotes := true;
+                            } else {
+                                // End of quotes is end of word
+                                return ?Text.fromIter(wordBuffer.vals());
+                            };
+                        };
                     };
                 };
             };
@@ -174,17 +318,17 @@ module {
             };
         };
 
-        private func isWhitespace(c : ?Char) : Bool {
-            switch (c) {
-                case (null) false;
-                case (?' ') true;
-                case (?'\t') true;
-                case (?'\n') true;
-                case (?'\r') true;
-                case (?c) false;
-            };
-        };
+    };
 
+    private func isWhitespace(c : ?Char) : Bool {
+        switch (c) {
+            case (null) false;
+            case (?' ') true;
+            case (?'\t') true;
+            case (?'\n') true;
+            case (?'\r') true;
+            case (?c) false;
+        };
     };
 
     // <?xml version="1.0" encoding="UTF-8"?>

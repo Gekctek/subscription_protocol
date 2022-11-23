@@ -1,7 +1,15 @@
-import { Component, Show } from 'solid-js';
+import { Component, Match, Show, Switch } from 'solid-js';
 import { FeedItemInfo } from '../api/FeedActor';
 
 type Props = { value: FeedItemInfo };
+function unEscape(htmlStr: string) {
+    htmlStr = htmlStr.replace(/&lt;/g, "<");
+    htmlStr = htmlStr.replace(/&gt;/g, ">");
+    htmlStr = htmlStr.replace(/&quot;/g, "\"");
+    htmlStr = htmlStr.replace(/&#39;/g, "\'");
+    htmlStr = htmlStr.replace(/&amp;/g, "&");
+    return htmlStr;
+}
 
 const Item: Component<Props> = (props: Props) => {
     let channel = {
@@ -19,7 +27,7 @@ const Item: Component<Props> = (props: Props) => {
                     "font-size": "24px",
                     margin: "0 0 8px 0"
                 }}>
-                    <a href={props.value.content.link}>
+                    <a href={props.value.content.link} target="_blank">
                         {props.value.content.title}
                     </a>
                 </div>
@@ -36,16 +44,18 @@ const Item: Component<Props> = (props: Props) => {
                     <span>{props.value.content.date}</span>
                 </div>
 
-                <Show when={props.value.content.imageLink}>
+                <Show when={props.value.content.imageLink?.length ?? 0 > 0}>
                     <div style={{
                         margin: "0 0 8px 0"
                     }}>
                         <img src={props.value.content.imageLink} alt="Content Image" />
                     </div>
                 </Show>
-                <div style={{}}>
-                    <div>{props.value.content.description}</div>
-                </div>
+                <Switch fallback={<div textContent={props.value.content.body.value} />}>
+                    <Match when={props.value.content.body.format == "text/html"}>
+                        <div innerHTML={unEscape(props.value.content.body.value)} />
+                    </Match>
+                </Switch>
             </div >
         </div>
     );
