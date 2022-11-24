@@ -77,7 +77,6 @@ actor RSSBridge {
         };
         Cycles.add(1_000_000_000_000); // TODO
         let response = await ic.http_request(request);
-        let r = Cycles.refunded();
         if (response.status >= 200 and response.status < 300) {
             switch (Xml.parseFileBytes(response.body)) {
 

@@ -2,17 +2,9 @@
   "version": 1,
   "dfx": "0.12.1",
   "canisters": {
-    "ContentApp": {
+    "FeedReader": {
       "type": "motoko",
-      "main": "sample/ContentApp/Main.mo"
-    },
-    "ReaderApp": {
-      "type": "motoko",
-      "main": "sample/ReaderApp/Main.mo"
-    },
-    "AppRegistry": {
-      "type": "motoko",
-      "main": "sample/SNS/AppRegistry.mo"
+      "main": "sample/ReaderSingleActor/Main.mo"
     },
     "RSSBridge": {
       "type": "motoko",
