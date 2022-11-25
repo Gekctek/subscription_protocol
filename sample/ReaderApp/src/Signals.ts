@@ -1,6 +1,6 @@
 import { createResource, createSignal } from "solid-js";
 import type { Principal } from "@dfinity/principal";
-import { FeedActor, FeedItem, _SERVICE } from "./api/FeedActor";
+import { FeedActor, FeedItem, GetResult, _SERVICE } from "./api/FeedActor";
 import { ActorMethod, Identity } from "@dfinity/agent";
 import { identity } from "./api/Identity";
 
@@ -9,6 +9,8 @@ const minItems = 10;
 
 
 export const [unreadIndex, setUnreadIndex] = createSignal<number>(0);
+
+export const [isRegistered, setIsRegistered] = createSignal(true);
 
 async function fetchUnread(identity: Identity | null, info: { value: FeedItem[] | undefined; refetching: boolean | unknown }): Promise<FeedItem[]> {
 
@@ -33,7 +35,7 @@ export async function fetchSaved(identity: Identity | undefined, info: { value: 
 }
 async function fetchInternal(
     info: { value: FeedItem[] | undefined; refetching: boolean | unknown },
-    apiCall: ActorMethod<[number, [] | [number]], FeedItem[]>
+    apiCall: ActorMethod<[number, [] | [number]], GetResult>
 ): Promise<FeedItem[]> {
     let lastFeedItem;
     if (!info.value) {
@@ -41,7 +43,13 @@ async function fetchInternal(
     } else {
         lastFeedItem = info.value[info.value.length - 1];
     }
-    let items = await apiCall(minItems, lastFeedItem ? [lastFeedItem.hash] : []);
+    let getResult = await apiCall(minItems, lastFeedItem ? [lastFeedItem.hash] : []);
+    if ('notRegistered' in getResult) {
+        setIsRegistered(false);
+        return [];
+    }
+    setIsRegistered(true);
+    let items = getResult.ok;
     if (!info.value || !lastFeedItem) {
         return items;
     }

@@ -9,6 +9,7 @@ module {
             #changeOwner : Principal;
         };
         channelId : Text;
+        contextId : Text;
     };
 
     public type CallbackResult = {

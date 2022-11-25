@@ -40,11 +40,35 @@ actor FeedReader {
         var saved: List.List<ItemHash>;
     };
 
-    private stable var channels : Trie.Trie<Text, ChannelInfo> = Trie.empty();
+    private stable var channelMap : Trie.Trie<Text, ChannelInfo> = Trie.empty();
 
-    private stable var userData : Trie.Trie<Principal, UserData> = Trie.empty();
+    private stable var userDataMap : Trie.Trie<Principal, UserData> = Trie.empty();
 
     private stable var itemMap : Trie.Trie<ItemHash, FeedItem> = Trie.empty();
+
+
+
+    type AddChannelResult = {
+        #ok;
+        #channelNotFound;
+    };
+
+    type GetResult = {
+        #ok: [FeedItemWithHash];
+        #notRegistered;
+    };
+
+    type UserDataInfo = {
+        unread: [ItemHash];
+        saved: [ItemHash];
+    };
+
+    public query func getUsers() : async [UserDataInfo] {
+        return Trie.toArray<Principal, UserData, UserDataInfo>(userDataMap, func(k, v) { {
+            unread=List.toArray(v.unread);
+            saved=List.toArray(v.saved);
+        } });
+    };
 
     public shared ({ caller }) func channelCallback(update : Feed.CallbackArgs) : async Feed.CallbackResult {
 
@@ -61,7 +85,21 @@ actor FeedReader {
                     key=hash;
                 };
                 let (newItemMap, currentItem) = Trie.put(itemMap, key, Nat32.equal, newItem);
-                itemMap := newItemMap;
+                if(currentItem == null){
+                    itemMap := newItemMap;
+                };
+                let userId = Principal.fromText(update.contextId);
+                let userData : UserData = switch(getUserData(userId)){
+                    case (null) {
+                        let userKey = {hash=Principal.hash(userId); key=userId};
+                        let newUser : UserData = { var unread = List.nil(); var saved = List.nil() };
+                        let (newUserDataMap, _) = Trie.put(userDataMap, userKey, Principal.equal, newUser);
+                        userDataMap := newUserDataMap;
+                        newUser;
+                    };
+                    case (?userData) userData;
+                };
+                userData.unread := List.append(userData.unread, ?(hash, null));
             };
             case (#changeOwner(newOwner)) {
                 let channel : ChannelInfo = switch (validateCaller(caller, update.channelId)) {
@@ -74,13 +112,17 @@ actor FeedReader {
                     key = update.channelId;
                 };
                 let newChannel = { channel with owner = newOwner };
-                let (newChannels, _) = Trie.put(channels, channelKey, Text.equal, newChannel);
-                channels := newChannels;
+                let (newChannelMap, _) = Trie.put(channelMap, channelKey, Text.equal, newChannel);
+                channelMap := newChannelMap;
             };
         };
         #accepted;
     };
 
+
+    public shared query ({ caller }) func getItems() : async [FeedItem] {
+        return Trie.toArray<ItemHash, FeedItem, FeedItem>(itemMap, func(k, v) { v });
+    };
     public shared query ({ caller }) func getUnread(limit : Nat, afterItem : ?ItemHash) : async GetResult {
         
         get(#unread, caller, limit, afterItem);
@@ -90,6 +132,7 @@ actor FeedReader {
         
         get(#saved, caller, limit, afterItem);
     };
+
     public shared ({ caller }) func markItemAsRead(hash : ItemHash) : async {#ok; #notRegistered} {
         let userData = switch(getUserData(caller)) {
             case (null) return #notRegistered;
@@ -146,7 +189,7 @@ actor FeedReader {
 
 
     private func hashItem(i : FeedItem) : ItemHash {
-        Text.hash(i.channelId);
+        Nat32.mulWrap(Text.hash(i.channelId), Text.hash(i.content.title)); // TODO
     };
 
 
@@ -157,7 +200,7 @@ actor FeedReader {
     } {
 
         let c : ?ChannelInfo = Trie.get<Text, ChannelInfo>(
-            channels,
+            channelMap,
             {
                 hash = Text.hash(channelId);
                 key = channelId;
@@ -177,15 +220,6 @@ actor FeedReader {
         };
     };
 
-    type AddChannelResult = {
-        #ok;
-        #channelNotFound;
-    };
-
-    type GetResult = {
-        #ok: [FeedItemWithHash];
-        #notRegistered;
-    };
 
 
     private func get(t: {#unread;#saved}, caller: Principal, limit : Nat, afterItem : ?ItemHash) : GetResult {
@@ -219,7 +253,7 @@ actor FeedReader {
                                     };
                                     case (#saved) {
                                         userData.saved:= List.filter<ItemHash>(userData.saved, func(i){ i == itemHash});
-                                        };
+                                    };
                                 };
                             }
                         }
@@ -241,6 +275,6 @@ actor FeedReader {
 
     private func getUserData(caller: Principal) :?UserData {
         let key = {hash=Principal.hash(caller);key=caller};
-        Trie.get(userData, key, Principal.equal);
+        Trie.get(userDataMap, key, Principal.equal);
     };
 };

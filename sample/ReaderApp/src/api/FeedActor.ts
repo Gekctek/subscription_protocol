@@ -11,12 +11,14 @@ export type FeedItem = {
   hash: number
 };
 
+export type GetResult = { ok: FeedItem[] } | { 'notRegistered': null };
+
 export type SimpleResult = { 'ok': null } | { 'notRegistered': null };
 
 
 export interface _SERVICE {
-  'getUnread': ActorMethod<[number, [number] | []], FeedItem[]>,
-  'getSaved': ActorMethod<[number, [number] | []], FeedItem[]>,
+  'getUnread': ActorMethod<[number, [number] | []], GetResult>,
+  'getSaved': ActorMethod<[number, [number] | []], GetResult>,
   'saveItemForLater': ActorMethod<[number], SimpleResult>,
   'deleteSavedItem': ActorMethod<[number], SimpleResult>,
   'markItemAsRead': ActorMethod<[number], SimpleResult>
@@ -24,11 +26,14 @@ export interface _SERVICE {
 
 
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
-  const GetResult = IDL.Vec(IDL.Record({
-    channelId: IDL.Text,
-    content: ContentIDL,
-    hash: IDL.Nat32
-  }));
+  const GetResult = IDL.Variant({
+    ok: IDL.Vec(IDL.Record({
+      channelId: IDL.Text,
+      content: ContentIDL,
+      hash: IDL.Nat32
+    })),
+    notRegistered: IDL.Null
+  });
   const SimpleResult = IDL.Variant({ ok: IDL.Null, notRegistered: IDL.Null });
   return IDL.Service({
     'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),

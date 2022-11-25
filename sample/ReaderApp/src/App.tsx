@@ -4,8 +4,9 @@ import { Component, Match, Switch } from 'solid-js';
 import LoginButton from './components/LoginButton';
 import { identity } from './api/Identity';
 import Feed from './components/Feed';
-import { page, Page } from './Signals';
+import { isRegistered, page, Page } from './Signals';
 import SavedItems from './components/SavedItems';
+import ManageFeed from './components/ManageFeed';
 
 
 const App: Component = () => {
@@ -21,6 +22,17 @@ const App: Component = () => {
               height: '100%'
             }}>
             <LoginButton />
+          </div>
+        </Match>
+        <Match when={!isRegistered()}>
+          <div
+            style={{
+              display: 'flex',
+              'justify-content': 'center',
+              'align-items': 'center',
+              height: '100%'
+            }}>
+            <ManageFeed />
           </div>
         </Match>
         <Match when={identity() != null}>

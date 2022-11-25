@@ -1,6 +1,7 @@
 import { Principal } from '@dfinity/principal';
 
 
+export const rssBridgeCanisterId = Principal.fromText(import.meta.env.VITE_RSS_BRIDGE_CANISTER_ID);
 export const feedCanisterId = Principal.fromText(import.meta.env.VITE_FEED_CANISTER_ID);
 
 

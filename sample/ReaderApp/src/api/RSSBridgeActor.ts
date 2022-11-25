@@ -3,21 +3,22 @@ import { ActorMethod } from "@dfinity/agent";
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { ContentIDL } from "./models/Content";
+import { rssBridgeCanisterId } from "./CanisterIds";
 
 
 
 export type CallbackFunc = [Principal, string];
 export type SubscribeRequest = {
-    contextId: Text;
+    contextId: string;
     callback: CallbackFunc;
-    channels: [Text];
+    channels: [string];
 }
 export type SubscribeResult = { 'ok': null };
 export type UnsubscribeResult = { 'ok': null } | { 'notSubscribed': null };
 
 export interface _SERVICE {
     'subscribe': ActorMethod<[SubscribeRequest], SubscribeResult>,
-    'unsubscribe': ActorMethod<[Text], UnsubscribeResult>,
+    'unsubscribe': ActorMethod<[string], UnsubscribeResult>,
 };
 
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
@@ -51,4 +52,4 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     });
 };
 
-export const createChannelActor = (cannisterId: Principal) => createActor<_SERVICE>(cannisterId, idlFactory);
+export const RSSBridgeActor = createActor<_SERVICE>(rssBridgeCanisterId, idlFactory);
