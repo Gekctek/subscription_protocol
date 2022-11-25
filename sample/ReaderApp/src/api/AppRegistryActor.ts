@@ -14,7 +14,6 @@ export interface App {
 export interface ChannelInfo {
     'id': string,
     'name': string,
-    'tags': Array<string>,
     'instance': Principal,
     'description': [] | [string],
 }
@@ -35,7 +34,6 @@ export const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     const ChannelInfo = IDL.Record({
         'id': IDL.Text,
         'name': IDL.Text,
-        'tags': IDL.Vec(IDL.Text),
         'instance': IDL.Principal,
         'description': IDL.Opt(IDL.Text),
     });

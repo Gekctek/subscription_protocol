@@ -11,11 +11,13 @@ module {
     };
 
     public type ChannelActor = actor {
-        subscribe : (callback : Feed.Callback, options : ?SubscriptionOptions) -> async SubscribeResult;
+        subscribe : (request : SubscribeRequest) -> async SubscribeResult;
         unsubscribe : () -> async UnsubscribeResult;
     };
 
-    public type SubscriptionOptions = {
-
+    public type SubscribeRequest = {
+        callback: Feed.Callback;
+        contextId : Text;
+        channels: [Text];
     };
 };

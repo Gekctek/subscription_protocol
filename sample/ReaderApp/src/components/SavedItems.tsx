@@ -1,6 +1,6 @@
 import { Component, Match, Switch, For, createMemo } from 'solid-js';
 import { deleteSavedItem, gotoPage, Page, savedItems, savedResource, selectedSavedItem, setSelectedSavedItem, unreadIndex, unreadItems, unreadResource } from '../Signals';
-import { Badge, CircularProgress, Divider, Fab, List, ListItem, ListItemButton, ListItemText } from "@suid/material"
+import { Badge, Divider, List, ListItem, ListItemButton } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
 import { ArrowBackIosNew, RssFeed } from '@suid/icons-material';
 import RefreshIcon from '@suid/icons-material/Refresh';
@@ -21,7 +21,7 @@ const SavedItems: Component = () => {
         return {
             icon: <DeleteIcon />,
             onClick: async () => {
-                deleteSavedItem(selectedSavedItem()!.id);
+                deleteSavedItem(selectedSavedItem()!.hash);
                 setSelectedSavedItem(null);
             }
         }

@@ -1,7 +1,8 @@
 import { Component, Match, Show, Switch } from 'solid-js';
-import { FeedItemInfo } from '../api/FeedActor';
+import { FeedItem } from '../api/FeedActor';
 
-type Props = { value: FeedItemInfo };
+type Props = { value: FeedItem };
+
 function unEscape(htmlStr: string) {
     htmlStr = htmlStr.replace(/&lt;/g, "<");
     htmlStr = htmlStr.replace(/&gt;/g, ">");

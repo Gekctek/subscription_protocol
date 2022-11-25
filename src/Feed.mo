@@ -16,9 +16,5 @@ module {
         #notAuthorized;
     };
 
-    public type Actor = actor {
-        channelCallback : Callback;
-    };
-
     public type Callback = shared (update : CallbackArgs) -> async CallbackResult;
 };

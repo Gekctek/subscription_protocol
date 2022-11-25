@@ -2,7 +2,6 @@
 import WbSunnyIcon from '@suid/icons-material/WbSunny';
 import { Fab } from '@suid/material';
 import { Component, For, JSXElement } from 'solid-js';
-import NavWrapper, { ButtonInfo } from './NavWrapper';
 
 
 type Props = {

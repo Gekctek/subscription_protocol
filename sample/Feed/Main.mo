@@ -81,6 +81,70 @@ actor FeedReader {
         #accepted;
     };
 
+    public shared query ({ caller }) func getUnread(limit : Nat, afterItem : ?ItemHash) : async GetResult {
+        
+        get(#unread, caller, limit, afterItem);
+    };
+
+    public shared query ({ caller }) func getSaved(limit : Nat, afterItem : ?ItemHash) : async GetResult {
+        
+        get(#saved, caller, limit, afterItem);
+    };
+    public shared ({ caller }) func markItemAsRead(hash : ItemHash) : async {#ok; #notRegistered} {
+        let userData = switch(getUserData(caller)) {
+            case (null) return #notRegistered;
+            case (?d) d;
+        };
+        userData.unread := List.filter<ItemHash>(
+            userData.unread,
+            func(i) {
+                i != hash;
+            },
+        );
+        #ok();
+    };
+
+    public shared ({ caller }) func saveItemForLater(hash : ItemHash) : async {#ok; #notRegistered} {
+        let userData = switch(getUserData(caller)) {
+            case (null) return #notRegistered;
+            case (?d) d;
+        };
+        userData.saved := List.append(userData.saved, ?(hash, null));
+        #ok();
+    };
+
+    public shared ({ caller }) func deleteSavedItem(hash : ItemHash) : async {#ok; #notRegistered} {
+        
+        let userData = switch(getUserData(caller)) {
+            case (null) return #notRegistered;
+            case (?d) d;
+        };
+        userData.saved := List.filter<ItemHash>(
+            userData.saved,
+            func(i) {
+                i != hash;
+            },
+        );
+        #ok();
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private func hashItem(i : FeedItem) : ItemHash {
         Text.hash(i.channelId);
     };
@@ -123,15 +187,6 @@ actor FeedReader {
         #notRegistered;
     };
 
-    public shared query ({ caller }) func getUnread(limit : Nat, afterItem : ?ItemHash) : async GetResult {
-        
-        get(#unread, caller, limit, afterItem);
-    };
-
-    public shared query ({ caller }) func getSaved(limit : Nat, afterItem : ?ItemHash) : async GetResult {
-        
-        get(#saved, caller, limit, afterItem);
-    };
 
     private func get(t: {#unread;#saved}, caller: Principal, limit : Nat, afterItem : ?ItemHash) : GetResult {
         let userData = switch(getUserData(caller)) {
@@ -183,43 +238,6 @@ actor FeedReader {
         return #ok(resultItems.toArray());
     };
 
-    public shared ({ caller }) func markItemAsRead(hash : ItemHash) : async {#ok; #notRegistered} {
-        let userData = switch(getUserData(caller)) {
-            case (null) return #notRegistered;
-            case (?d) d;
-        };
-        userData.unread := List.filter<ItemHash>(
-            userData.unread,
-            func(i) {
-                i != hash;
-            },
-        );
-        #ok();
-    };
-
-    public shared ({ caller }) func saveItemForLater(hash : ItemHash) : async {#ok; #notRegistered} {
-        let userData = switch(getUserData(caller)) {
-            case (null) return #notRegistered;
-            case (?d) d;
-        };
-        userData.saved := List.append(userData.saved, ?(hash, null));
-        #ok();
-    };
-
-    public shared ({ caller }) func deleteSavedItem(hash : ItemHash) : async {#ok; #notRegistered} {
-        
-        let userData = switch(getUserData(caller)) {
-            case (null) return #notRegistered;
-            case (?d) d;
-        };
-        userData.saved := List.filter<ItemHash>(
-            userData.saved,
-            func(i) {
-                i != hash;
-            },
-        );
-        #ok();
-    };
 
     private func getUserData(caller: Principal) :?UserData {
         let key = {hash=Principal.hash(caller);key=caller};

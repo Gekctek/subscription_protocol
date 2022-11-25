@@ -2,7 +2,7 @@
   "version": 1,
   "dfx": "0.12.1",
   "canisters": {
-    "FeedReader": {
+    "Feed": {
       "type": "motoko",
       "main": "sample/ReaderSingleActor/Main.mo"
     },

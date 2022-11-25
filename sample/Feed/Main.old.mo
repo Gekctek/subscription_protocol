@@ -1,7 +1,7 @@
 import Content "../../src/Content";
 import Cycles "mo:base/ExperimentalCycles";
 import Feed "../../src/Feed";
-import FeedInstance "./FeedInstance";
+import FeedInstance "./FeedInstance.old";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Trie "mo:base/Trie";

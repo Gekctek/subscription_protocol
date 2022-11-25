@@ -1,16 +1,13 @@
-import { Component, createMemo, Match, Show, Switch } from 'solid-js';
-import { FeedItemInfo } from '../api/FeedActor';
-import { ChannelInfo } from '../api/models/ChannelInfo';
-import { Principal } from '@dfinity/principal';
+import { Component, createMemo, Match, Switch } from 'solid-js';
 import { unreadIndex, unreadItems, unreadResource, nextUnread, previousUnread, saveItemForLater, Page, gotoPage, savedResource, savedItems, deleteSavedItem } from '../Signals';
 import RefreshIcon from '@suid/icons-material/Refresh';
 import ArticleIcon from '@suid/icons-material/Article';
-import { Badge, CircularProgress, Fab } from "@suid/material"
+import { Badge } from "@suid/material"
 import End from './EndContent';
 import { Bookmark, RssFeed, BookmarkAdded } from '@suid/icons-material';
 import ArrowBackIosNewIcon from '@suid/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@suid/icons-material/ArrowForwardIos';
-import NavWrapper, { ButtonInfo } from './NavWrapper';
+import NavWrapper from './NavWrapper';
 import Item from './Item';
 
 
