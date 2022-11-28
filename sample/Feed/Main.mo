@@ -63,7 +63,7 @@ actor FeedReader {
         saved: [ItemHash];
     };
 
-    public query func getUsers() : async [UserDataInfo] {
+    public func getUsers() : async [UserDataInfo] {
         return Trie.toArray<Principal, UserData, UserDataInfo>(userDataMap, func(k, v) { {
             unread=List.toArray(v.unread);
             saved=List.toArray(v.saved);

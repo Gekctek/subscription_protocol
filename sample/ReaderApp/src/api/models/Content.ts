@@ -17,27 +17,23 @@ export const ContentIDL = IDL.Record({
   authors: IDL.Vec(AuthorIDL),
   imageLink: IDL.Opt(IDL.Text),
   language: IDL.Opt(IDL.Text),
-  date: IDL.Int,
+  date: IDL.Int
 });
 
 
 
-export type Author = {
-  name: string,
-  identity: Principal,
-  handle: string
-};
+export type Author = { name: string } | {  identity: Principal } | {  handle: string };
 
 
 export type Content = {
   title: string,
   body: {
-    format?: string,
+    format: [string] | [],
     value: string
   },
   link: string,
-  authors: [Author],
-  imageLink?: string,
-  language?: string,
+  authors: Author[],
+  imageLink: [string] | [],
+  language: [string] | [],
   date: number,
 };

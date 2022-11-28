@@ -8,7 +8,6 @@ import { isRegistered, page, Page } from './Signals';
 import SavedItems from './components/SavedItems';
 import ManageFeed from './components/ManageFeed';
 
-
 const App: Component = () => {
   return (
     <>

@@ -2,7 +2,7 @@ import { createActor } from "./ActorUtil";
 import { ActorMethod } from "@dfinity/agent";
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { ContentIDL } from "./models/Content";
+import { Content, ContentIDL } from "./models/Content";
 import { rssBridgeCanisterId } from "./CanisterIds";
 
 
@@ -19,6 +19,7 @@ export type UnsubscribeResult = { 'ok': null } | { 'notSubscribed': null };
 export interface _SERVICE {
     'subscribe': ActorMethod<[SubscribeRequest], SubscribeResult>,
     'unsubscribe': ActorMethod<[string], UnsubscribeResult>,
+    'push': ActorMethod<[string, Content], void>,
 };
 
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
@@ -48,7 +49,8 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     });
     return IDL.Service({
         'subscribe': IDL.Func([SubscribeRequest], [SubscribeResult], []),
-        'unsubscribe': IDL.Func([IDL.Text], [UnsubscribeResult], [])
+        'unsubscribe': IDL.Func([IDL.Text], [UnsubscribeResult], []),
+        'push': IDL.Func([IDL.Text, ContentIDL], [], [])
     });
 };
 

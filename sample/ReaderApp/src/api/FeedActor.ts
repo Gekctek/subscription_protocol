@@ -15,8 +15,13 @@ export type GetResult = { ok: FeedItem[] } | { 'notRegistered': null };
 
 export type SimpleResult = { 'ok': null } | { 'notRegistered': null };
 
+type UserDataInfo = {
+  unread: number[];
+  saved: number[];
+};
 
 export interface _SERVICE {
+  'getUsers': ActorMethod<[], UserDataInfo[]>,
   'getUnread': ActorMethod<[number, [number] | []], GetResult>,
   'getSaved': ActorMethod<[number, [number] | []], GetResult>,
   'saveItemForLater': ActorMethod<[number], SimpleResult>,
@@ -35,7 +40,12 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     notRegistered: IDL.Null
   });
   const SimpleResult = IDL.Variant({ ok: IDL.Null, notRegistered: IDL.Null });
+  const UserDataInfo = IDL.Record({
+    unread: IDL.Vec(IDL.Nat32),
+    saved: IDL.Vec(IDL.Nat32)
+  })
   return IDL.Service({
+    'getUsers': IDL.Func([], [IDL.Vec(UserDataInfo)], []),
     'getUnread': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),
     'getSaved': IDL.Func([IDL.Nat, IDL.Opt(IDL.Nat32)], [GetResult], ["query"]),
     'saveItemForLater': IDL.Func([IDL.Nat32], [SimpleResult], []),
