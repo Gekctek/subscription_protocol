@@ -13,12 +13,14 @@ import Item from './Item';
 const SavedItems: Component = () => {
     let backToSavedButton = createMemo(() => {
         return {
+            label: "Back",
             icon: <ArrowBackIosNew />,
             onClick: () => setSelectedSavedItem(null)
         }
     });
     let deleteSavedButton = createMemo(() => {
         return {
+            label: "Delete",
             icon: <DeleteIcon />,
             onClick: async () => {
                 deleteSavedItem(selectedSavedItem()!.hash);
@@ -28,12 +30,14 @@ const SavedItems: Component = () => {
     });
     let refreshButton = createMemo(() => {
         return {
+            label: "Refresh",
             icon: <RefreshIcon />,
             onClick: () => savedResource.refetch()
         }
     });
     let unreadPageButton = createMemo(() => {
         return {
+            label: "Unread",
             icon: <Badge badgeContent={(unreadItems()?.length ?? 0) - unreadIndex()} color="primary">
                 <RssFeed />
             </Badge>,
@@ -44,23 +48,21 @@ const SavedItems: Component = () => {
         <Switch>
             <Match when={!!selectedSavedItem()}>
                 <NavWrapper
-                    navButtons={[
+                    quickButtons={[
                         backToSavedButton(),
-                        deleteSavedButton(),
-                        null,
-                        null
-                    ]}>
+                        deleteSavedButton()
+                    ]}
+                    speedDialButtons={[]}>
                     <Item value={selectedSavedItem()!} />
                 </NavWrapper>
             </Match>
             <Match when={(savedItems()?.length ?? 0) > 0}>
                 <NavWrapper
-                    navButtons={[
-                        null,
-                        null,
+                    quickButtons={[
                         refreshButton(),
                         unreadPageButton()
-                    ]}>
+                    ]}
+                    speedDialButtons={[]}>
                     <>
                         <h1>Saved:</h1>
                         <List>
@@ -83,7 +85,7 @@ const SavedItems: Component = () => {
                                                             "max-height": "150px",
                                                             "margin": i() % 2 == 0 ? "0 10px 0 0" : "0 0 0 10px"
                                                         }}
-                                                        src={item.content.imageLink}
+                                                        src={item.content.imageLink[0]}
                                                         alt="Content Image" />
                                                     <div>{item.content.title}</div>
                                                 </div>
@@ -99,12 +101,11 @@ const SavedItems: Component = () => {
             </Match >
             <Match when={(savedItems()?.length ?? 0) < 1}>
                 <NavWrapper
-                    navButtons={[
-                        null,
-                        null,
+                    quickButtons={[
                         refreshButton(),
                         unreadPageButton()
-                    ]} >
+                    ]}
+                    speedDialButtons={[]}>
                     <End
                         name='Saved'
                         icon={

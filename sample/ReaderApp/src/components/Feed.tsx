@@ -7,82 +7,115 @@ import End from './EndContent';
 import { Bookmark, RssFeed, BookmarkAdded } from '@suid/icons-material';
 import ArrowBackIosNewIcon from '@suid/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@suid/icons-material/ArrowForwardIos';
+import SettingsIcon from '@suid/icons-material/Settings';
 import NavWrapper from './NavWrapper';
 import Item from './Item';
 
 
 
+const backButton = createMemo(() => {
+    return {
+        label: "Back",
+        icon: <ArrowBackIosNewIcon />,
+        onClick: () => previousUnread()
+    }
+});
+const manageFeedButton = createMemo(() => {
+    return {
+        label: "Manage",
+        icon: <SettingsIcon />,
+        onClick: () => gotoPage(Page.Manage)
+    } 
+});
+const savedPageButton = createMemo(() => {
+    return {
+        label: "Saved",
+        icon: <Badge badgeContent={savedItems()?.length ?? 0} color="primary">
+            <ArticleIcon />
+        </Badge>,
+        onClick: () => gotoPage(Page.Saved)
+    }
+});
+const refreshButton = createMemo(() => {
+    return {
+        label: "Refresh",
+        icon: <RefreshIcon />,
+        onClick: () => unreadResource.refetch()
+    }
+});
+const saveItemButton = createMemo(() => {
+    return {
+        label: "Save",
+        icon: <Bookmark />,
+        onClick: () => saveItemForLater()
+    };
+});
+const nextButton = createMemo(() => {
+    return {
+        label: "Next",
+        icon: <ArrowForwardIosIcon />,
+        onClick: () => nextUnread()
+    };
+});
 
 
 const Feed: Component = () => {
 
-    const backButton = createMemo(() => {
-        if (unreadIndex() < 1 || (unreadItems()?.length ?? 0) < 1) {
-            return null;
+    var currentItem = createMemo(() => {
+        let unreadItemsValue = unreadItems() ?? [];
+        let unreadIndexValue = unreadIndex();
+        if(unreadItemsValue.length  > unreadIndexValue) {
+            return unreadItemsValue[unreadIndexValue]
         }
-        return {
-            icon: <ArrowBackIosNewIcon />,
-            onClick: () => previousUnread()
-        }
+        return null;
     });
-    const savedPageButton = createMemo(() => {
-        return {
-            icon: <Badge badgeContent={savedItems()?.length ?? 0} color="primary">
-                <ArticleIcon />
-            </Badge>,
-            onClick: () => gotoPage(Page.Saved)
-        }
-    });
-    const refreshButton = createMemo(() => {
-        return {
-            icon: <RefreshIcon />,
-            onClick: () => unreadResource.refetch()
-        }
-    });
-    const saveItemButton = createMemo(() => {
-        return {
-            icon: <Bookmark />,
-            onClick: () => saveItemForLater()
-        };
-    });
-    const nextButton = createMemo(() => {
-        return {
-            icon: <ArrowForwardIosIcon />,
-            onClick: () => nextUnread()
-        };
-    });
-    return (
-        <Switch>
-            <Match when={(unreadItems()?.length ?? 0) > unreadIndex()}>
-                <NavWrapper
-                    navButtons={[
-                        backButton(),
-                        saveItemButton(),
-                        nextButton(),
-                        savedPageButton()
-                    ]}>
-                    <Item value={unreadItems()![unreadIndex()]} />
-                </NavWrapper>
-            </Match>
-            <Match when={(unreadItems()?.length ?? 0) < (unreadIndex() + 1)}>
-                <NavWrapper
-                    navButtons={[
-                        backButton(),
-                        null,
-                        refreshButton(),
-                        savedPageButton()
-                    ]}>
-                    <End
-                        name={"Unread"}
-                        icon={
-                            <RssFeed style={{
-                                'font-size': '200px'
-                            }} />
-                        } />
-                </NavWrapper>
-            </Match>
-        </Switch>
 
+    var quickButtons = createMemo(() => {
+        let currentItemValue = currentItem();
+        if(currentItemValue != null) {
+            return [
+                backButton(),
+                saveItemButton(),
+                nextButton()
+            ];
+        }
+        return [
+            backButton(),
+            refreshButton()
+        ];
+    });
+
+    var speedDialButtons = createMemo(() => {
+        let currentItemValue = currentItem();
+        if(currentItemValue != null) {
+            return [
+                refreshButton(),
+                manageFeedButton(),
+                savedPageButton()
+            ];
+        }
+        return [
+            backButton(),
+            refreshButton()
+        ];
+    });
+
+    var content = createMemo(() => {
+        let currentItemValue = currentItem();
+        if(currentItemValue != null) {
+            return <Item value={currentItemValue} />
+        }
+        return <End
+            name={"Unread"}
+            icon={<RssFeed style={{ 'font-size': '200px' }} />} />
+    });
+
+    return (
+        <NavWrapper
+            quickButtons={quickButtons()}
+            speedDialButtons={speedDialButtons()}>
+                {content()}
+        </NavWrapper>
     );
 };
 

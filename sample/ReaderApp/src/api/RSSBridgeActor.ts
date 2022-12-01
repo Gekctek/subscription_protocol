@@ -16,7 +16,14 @@ export type SubscribeRequest = {
 export type SubscribeResult = { 'ok': null };
 export type UnsubscribeResult = { 'ok': null } | { 'notSubscribed': null };
 
+export type Subscription = {
+    url: string
+};
+
+export type GetSubscriptionsResult = {'ok': Subscription[] } | { 'notSubscribed': null };
+
 export interface _SERVICE {
+    'getSubscriptions': ActorMethod<[], GetSubscriptionsResult>,
     'subscribe': ActorMethod<[SubscribeRequest], SubscribeResult>,
     'unsubscribe': ActorMethod<[string], UnsubscribeResult>,
     'push': ActorMethod<[string, Content], void>,
@@ -47,7 +54,11 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
         callback: callbackIdl,
         channels: IDL.Vec(IDL.Text)
     });
+    let GetSubscriptionsResult = IDL.Vec(IDL.Record({
+        url: IDL.Text
+    }));
     return IDL.Service({
+        'getSubscriptions': IDL.Func([], [GetSubscriptionsResult], ["query"]),
         'subscribe': IDL.Func([SubscribeRequest], [SubscribeResult], []),
         'unsubscribe': IDL.Func([IDL.Text], [UnsubscribeResult], []),
         'push': IDL.Func([IDL.Text, ContentIDL], [], [])

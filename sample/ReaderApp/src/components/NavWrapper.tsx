@@ -1,48 +1,60 @@
 import { Card, Fab } from "@suid/material";
-import { Component, For, JSXElement, Show } from "solid-js";
+import { Component, createMemo, createSignal, For, JSXElement, Show } from "solid-js";
+import SpeedDial, { ButtonInfo } from "./SpeedDial";
 
-export type ButtonInfo = {
-    icon: JSXElement,
-    onClick: () => any;
-} | null;
+
+type ButtonOptions = {
+    children: JSXElement
+};
+const ButtonWrapper: Component<ButtonOptions> = (props: ButtonOptions) => {
+    return (
+        <div style={{ "flex-grow": '1', padding: "10px 0 10px 0", display: 'flex', 'justify-content': 'center' }}>
+            {props.children}
+        </div>
+    );
+};
 
 type Props = {
     children: JSXElement,
-    navButtons: ButtonInfo[]
+    quickButtons: ButtonInfo[],
+    speedDialButtons: ButtonInfo[]
 };
-
 const NavWrapper: Component<Props> = (props: Props) => {
     return (
         <div style={{
             height: '100%',
-            display: 'flex',
-            "flex-direction": 'column'
         }}>
             <div style={{
-                "flex-grow": 1,
-                "overflow-y": 'auto'
+                height: '100%',
+                "overflow-y": 'auto',
+                'margin-bottom': '76px'
             }}>
                 {props.children}
             </div>
             <div style={{
-                height: '76px',
-                "flex-grow": 0,
+                'max-width': '600px',
+                position: 'fixed',
+                bottom: 0,
                 width: '100%',
                 display: 'flex',
                 "justify-content": 'space-around',
-                "align-content": 'center'
+                "align-content": 'center',
+                "align-items": "flex-end"
             }}>
-                <For each={props.navButtons}>
+                <For each={props.quickButtons}>
                     {(b) =>
-                        <div style={{ "flex-grow": '1', padding: "10px 0 10px 0", display: 'flex', 'justify-content': 'center' }}>
-                            <Show when={!!b} fallback={<div style={{ width: '56px' }}></div>}>
-                                <Fab onClick={b!.onClick}>
-                                    {b!.icon}
-                                </Fab>
-                            </Show>
-                        </div>
+                        <ButtonWrapper>
+                            <Fab onClick={b.onClick}>
+                                {b.icon}
+                            </Fab>
+                        </ButtonWrapper>
                     }
                 </For>
+                <Show when={props.speedDialButtons.length > 0}>
+                    <ButtonWrapper>
+                        <SpeedDial options={props.speedDialButtons}/>
+                    </ButtonWrapper>
+                </Show>
             </div >
         </div >
 

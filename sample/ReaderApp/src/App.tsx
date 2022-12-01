@@ -24,20 +24,15 @@ const App: Component = () => {
           </div>
         </Match>
         <Match when={!isRegistered()}>
-          <div
-            style={{
-              display: 'flex',
-              'justify-content': 'center',
-              'align-items': 'center',
-              height: '100%'
-            }}>
-            <ManageFeed />
-          </div>
+          <ManageFeed />
         </Match>
         <Match when={identity() != null}>
           <Switch>
             <Match when={page() == Page.Home}>
               <Feed />
+            </Match>
+            <Match when={page() == Page.Manage}>
+              <ManageFeed />
             </Match>
             <Match when={page() == Page.Saved}>
               <SavedItems />

@@ -21,11 +21,6 @@ actor RSSBridge {
         var callback : Feed.Callback; // TODO is the use case for multiple callbacks worth it or what can do as an alternative?
         var channels : [Text];
     };
-    type SubscriberInfo = {
-        contextId : Text;
-        callback : Feed.Callback;
-        channels : [Text];
-    };
 
     type Feed = {
         lastUpdated: Time.Time;
@@ -68,12 +63,18 @@ actor RSSBridge {
         };
     };
 
-    public query func getSubscribers() : async [SubscriberInfo] {
-        return Trie.toArray<Principal, Subscriber, SubscriberInfo>(subscribers, func(k, v) { {
-            contextId=v.contextId;
-            callback=v.callback;
-            channels=v.channels;
-        } });
+    public shared query  ({ caller }) func getSubscriptions() : async Channel.GetSubscriptionsResult {
+        let key = {
+            hash=Principal.hash(caller);
+            key=caller
+        };
+        let subscriptions: [Channel.Subscription] = switch(Trie.get(subscribers, key, Principal.equal)){
+            case (null) [];
+            case (?subscriberInfo) {
+                Array.map<Text, Channel.Subscription>(subscriberInfo.channels, func (c) { { url=c } });
+            }
+        };
+        #ok(subscriptions);
     };
 
     public shared func push(channelId: Text, content : Content.Content) : async () {

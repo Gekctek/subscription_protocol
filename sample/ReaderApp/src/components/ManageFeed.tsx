@@ -1,5 +1,5 @@
-import { Component, createMemo, createSignal } from 'solid-js';
-import { Badge, Button, TextField } from "@suid/material"
+import { Component, createMemo, createResource, createSignal, For } from 'solid-js';
+import { Badge, Button, List, ListItem, TextField } from "@suid/material"
 import NavWrapper from './NavWrapper';
 import { RSSBridgeActor, SubscribeRequest } from '../api/RSSBridgeActor';
 import { identity } from '../api/Identity';
@@ -8,6 +8,21 @@ import { feedCanisterId } from '../api/CanisterIds';
 
 
 const [feedUrl, setFeedUrl] = createSignal<string | null>(null);
+
+type Subscription = {
+    url: string;
+};
+
+async function getRssFeeds(a: boolean | undefined, info: { value: Subscription[] | undefined; refetching: boolean | unknown }): Promise<Subscription[]> {
+    let getResult = await RSSBridgeActor.getSubscriptions();
+    if ('notSubscribed' in getResult) {
+        return [];
+    }
+    let items = getResult.ok;
+    return items;
+};
+
+const [rssFeeds, rssFeedResource] = createResource(getRssFeeds);
 
 function subscribe(){
     let feedUrlValue = feedUrl();
@@ -28,7 +43,7 @@ function subscribe(){
 const Feed: Component = () => {
 
     return (
-        <NavWrapper navButtons={[null, null, null, null]}>
+        <NavWrapper quickButtons={[]} speedDialButtons={[]}>
             <TextField
             label="Feed Url"
             value={feedUrl()}
@@ -38,6 +53,15 @@ const Feed: Component = () => {
             <Button onClick={() => subscribe()}>
                 Subscribe
             </Button>
+            <List>
+                <For each={rssFeeds()} >
+                    {(f) => 
+                        <ListItem>
+                            {f.url}
+                        </ListItem>
+                    }
+                </For>
+            </List>
         </NavWrapper>
 
     );

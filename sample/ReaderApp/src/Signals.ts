@@ -108,6 +108,7 @@ export function previousUnread() {
 export enum Page {
     Home,
     Saved,
+    Manage,
     Archive
 };
 

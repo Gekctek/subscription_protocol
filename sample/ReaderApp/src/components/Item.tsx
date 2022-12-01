@@ -49,11 +49,11 @@ const Item: Component<Props> = (props: Props) => {
                     <div style={{
                         margin: "0 0 8px 0"
                     }}>
-                        <img src={props.value.content.imageLink} alt="Content Image" />
+                        <img src={props.value.content.imageLink[0]} alt="Content Image" />
                     </div>
                 </Show>
                 <Switch fallback={<div textContent={props.value.content.body.value} />}>
-                    <Match when={props.value.content.body.format == "text/html"}>
+                    <Match when={props.value.content.body.format[0] == "html"}>
                         <div innerHTML={unEscape(props.value.content.body.value)} />
                     </Match>
                 </Switch>
