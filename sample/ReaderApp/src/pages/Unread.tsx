@@ -1,15 +1,14 @@
 import { Component, createMemo, Match, Switch } from 'solid-js';
 import { unreadIndex, unreadItems, unreadResource, nextUnread, previousUnread, saveItemForLater, Page, gotoPage, savedResource, savedItems, deleteSavedItem } from '../Signals';
 import RefreshIcon from '@suid/icons-material/Refresh';
-import ArticleIcon from '@suid/icons-material/Article';
 import { Badge } from "@suid/material"
-import End from './EndContent';
+import End from '../components/EndContent';
 import { Bookmark, RssFeed, BookmarkAdded } from '@suid/icons-material';
 import ArrowBackIosNewIcon from '@suid/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@suid/icons-material/ArrowForwardIos';
-import SettingsIcon from '@suid/icons-material/Settings';
-import NavWrapper from './NavWrapper';
-import Item from './Item';
+import NavWrapper from '../components/NavWrapper';
+import Item from '../components/Item';
+import {manageFeedButton, savedPageButton} from '../CommonButtons';
 
 
 
@@ -18,22 +17,6 @@ const backButton = createMemo(() => {
         label: "Back",
         icon: <ArrowBackIosNewIcon />,
         onClick: () => previousUnread()
-    }
-});
-const manageFeedButton = createMemo(() => {
-    return {
-        label: "Manage",
-        icon: <SettingsIcon />,
-        onClick: () => gotoPage(Page.Manage)
-    } 
-});
-const savedPageButton = createMemo(() => {
-    return {
-        label: "Saved",
-        icon: <Badge badgeContent={savedItems()?.length ?? 0} color="primary">
-            <ArticleIcon />
-        </Badge>,
-        onClick: () => gotoPage(Page.Saved)
     }
 });
 const refreshButton = createMemo(() => {
@@ -59,7 +42,7 @@ const nextButton = createMemo(() => {
 });
 
 
-const Feed: Component = () => {
+const Unread: Component = () => {
 
     var currentItem = createMemo(() => {
         let unreadItemsValue = unreadItems() ?? [];
@@ -73,16 +56,22 @@ const Feed: Component = () => {
     var quickButtons = createMemo(() => {
         let currentItemValue = currentItem();
         if(currentItemValue != null) {
+            // If not at end of feed
             return [
                 backButton(),
                 saveItemButton(),
                 nextButton()
             ];
         }
-        return [
-            backButton(),
-            refreshButton()
+        let endOfFeedButtons = [
+            refreshButton(),
+            savedPageButton()
         ];
+        if(!!unreadItems()?.length) {
+            // If can go back, add back button
+            endOfFeedButtons.unshift(backButton())
+        }
+        return endOfFeedButtons;
     });
 
     var speedDialButtons = createMemo(() => {
@@ -95,8 +84,7 @@ const Feed: Component = () => {
             ];
         }
         return [
-            backButton(),
-            refreshButton()
+            manageFeedButton()
         ];
     });
 
@@ -119,4 +107,4 @@ const Feed: Component = () => {
     );
 };
 
-export default Feed;
+export default Unread;

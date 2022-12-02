@@ -27,7 +27,13 @@ type Props = {
     options: ButtonInfo[]
 };
 
+function wrapOnClick(onClick: () => void) {
+    onClick();
+    onClose();
+}
+
 const SpeedDial: Component<Props> = (props: Props) => {
+    const anyOptions = props.options.length > 0;
     return (
         <>
             <div style={{
@@ -43,12 +49,15 @@ const SpeedDial: Component<Props> = (props: Props) => {
                                 icon={o.icon}
                                 index={i()}
                                 label={o.label}
-                                onClick={o.onClick}
+                                onClick={() => wrapOnClick(o.onClick)}
                                 visible={isOpen()}/>
                         </div>
                     }
                 </For>
-                <FabSpinner isOpen={isOpen()} onClick={(e) => toggleMenu(e)} />
+                <FabSpinner
+                    isOpen={isOpen()}
+                    disabled={!anyOptions}
+                    onClick={(e) => toggleMenu(e)} />
             </div>
             
         </>

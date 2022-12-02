@@ -15,7 +15,6 @@ import IC "mo:base/ExperimentalInternetComputer";
 import Cycles "mo:base/ExperimentalCycles";
 
 actor RSSBridge {
-    
 
     type SubscriptionInfo = {
         var callback : Subscription.Callback; // TODO is the use case for multiple callbacks worth it or what can do as an alternative?
@@ -24,81 +23,102 @@ actor RSSBridge {
 
     type UserInfo = {
         // TODO do multiple contexts per sub
-        var subscriptions: Trie.Trie<Subscription.Id, SubscriptionInfo>;
+        var subscriptions : Trie.Trie<Subscription.Id, SubscriptionInfo>;
     };
 
     type Feed = {
-        lastUpdated: Time.Time;
+        lastUpdated : ?Time.Time;
     };
 
     private stable var feeds : Trie.Trie<Text, Feed> = Trie.empty();
-    
+
     private stable var users : Trie.Trie<Principal, UserInfo> = Trie.empty();
 
     public shared ({ caller }) func addSubscription(request : Subscription.AddRequest) : async Subscription.AddResult {
-        let user: UserInfo = getOrCreateUser(caller);
-        
+        let user : UserInfo = getOrCreateUser(caller);
+
         let subKey = {
             hash = Text.hash(request.id);
             key = request.id;
         };
-        let newSubscription: SubscriptionInfo = {
+        for (c in Iter.fromArray(request.channels)) {
+            let _ = await addFeed(c); // TODO
+        };
+        let newSubscription : SubscriptionInfo = {
             var callback = request.callback;
             var channels = TrieSet.fromArray(request.channels, Text.hash, Text.equal);
         };
         let (newSubscriptions, currentSub) = Trie.put(user.subscriptions, subKey, Text.equal, newSubscription);
-        
-        switch(currentSub) {
+
+        switch (currentSub) {
             case (?sub) #alreadyExists;
             case (null) {
                 user.subscriptions := newSubscriptions;
                 #ok;
-            }
+            };
         };
     };
 
-    public shared ({caller}) func updateSubscription(request: Subscription.UpdateRequest) : async Subscription.UpdateResult {
-        let user: UserInfo = switch(getUserOrDefault(caller)){
+    type AddFeedResult = { #ok; #alreadyExists };
+
+    public shared func addFeed(url : Text) : async AddFeedResult {
+        // TODO secure and test the feed
+        let key = {
+            hash = Text.hash(url);
+            key = url;
+        };
+        let (newFeeds, currentFeed) = Trie.put(feeds, key, Text.equal, { lastUpdated = null });
+        switch (currentFeed) {
+            case (null) {
+                feeds := newFeeds;
+                #ok;
+            };
+            case (?f) #alreadyExists;
+        };
+    };
+
+    public shared ({ caller }) func updateSubscription(request : Subscription.UpdateRequest) : async Subscription.UpdateResult {
+        let user : UserInfo = switch (getUserOrDefault(caller)) {
             case (null) return #notFound;
             case (?u) u;
         };
-        
+
         let subKey = {
             hash = Text.hash(request.id);
             key = request.id;
         };
-        let subscription: SubscriptionInfo = switch(Trie.get(user.subscriptions, subKey, Text.equal)){
+        let subscription : SubscriptionInfo = switch (Trie.get(user.subscriptions, subKey, Text.equal)) {
             case (null) return #notFound;
             case (?sub) sub;
         };
-        switch(request.channels) {
+        switch (request.channels) {
             case (null) {
                 // Dont update
             };
             case (?channels) {
-                switch(channels){
+                switch (channels) {
                     case (#add(a)) {
-                        let newChannels: TrieSet.Set<Text> = TrieSet.fromArray(a, Text.hash, Text.equal);
+                        let newChannels : TrieSet.Set<Text> = TrieSet.fromArray(a, Text.hash, Text.equal);
                         subscription.channels := TrieSet.union(subscription.channels, newChannels, Text.equal);
                     };
-                    case (#remove(r)){
-                        for (channelToRemove in Iter.fromArray(r)){
+                    case (#remove(r)) {
+                        for (channelToRemove in Iter.fromArray(r)) {
                             subscription.channels := TrieSet.delete(subscription.channels, channelToRemove, Text.hash(channelToRemove), Text.equal);
-                        }
+                        };
                     };
-                    case (#set(s)){
+                    case (#set(s)) {
                         subscription.channels := TrieSet.fromArray(s, Text.hash, Text.equal);
                     };
-                }
+                };
             };
         };
         #ok;
     };
 
-    public shared ({ caller }) func deleteSubscription(request: Subscription.DeleteRequest) : async Subscription.DeleteResult {
+    public shared ({ caller }) func deleteSubscription(request : Subscription.DeleteRequest) : async Subscription.DeleteResult {
 
         // Remove subscriber
-        switch(getUserOrDefault(caller)){
+        switch (getUserOrDefault(caller)) {
             case (?user) {
                 let subKey = {
                     hash = Text.hash(request.id);
@@ -109,32 +129,48 @@ actor RSSBridge {
                 #ok;
             };
             case (null) #notFound;
-        }
+        };
     };
 
-    public shared query  ({ caller }) func getSubscription(id: Subscription.Id) : async Subscription.GetResult {
-        switch(getUserOrDefault(caller)){
+    public shared query ({ caller }) func getSubscription(id : Subscription.Id) : async Subscription.GetResult {
+        switch (getUserOrDefault(caller)) {
             case (null) #notFound;
             case (?user) {
                 let subKey = {
                     hash = Text.hash(id);
                     key = id;
                 };
-                switch(Trie.get(user.subscriptions, subKey, Text.equal)){
+                switch (Trie.get(user.subscriptions, subKey, Text.equal)) {
                     case (null) #notFound;
-                    case (?sub){
+                    case (?sub) {
                         #ok({
-                            id=id;
-                            channels=TrieSet.toArray(sub.channels);
-                            callback=sub.callback;
-                        })
+                            id = id;
+                            channels = TrieSet.toArray(sub.channels);
+                            callback = sub.callback;
+                        });
                     };
                 };
-            }
+            };
         };
     };
 
-    public shared func push(channelId: Text, content : Content.Content) : async () {
+    type ChannelInfo = {
+        id : Text;
+        lastUpdated : ?Time.Time;
+    };
+    public shared func getChannels() : async [ChannelInfo] {
+        Trie.toArray<Text, Feed, ChannelInfo>(
+            feeds,
+            func(k, v) {
+                {
+                    id = k;
+                    lastUpdated = v.lastUpdated;
+                };
+            },
+        );
+    };
+
+    public shared func push(channelId : Text, content : Content.Content) : async () {
         // TODO secure
 
         label f for ((userId, user) in Trie.iter(users)) {
@@ -149,14 +185,14 @@ actor RSSBridge {
                     channelId = channelId;
                     subscriptionId = subId;
                 });
-            }
+            };
         };
     };
 
-    private func getOrCreateUser(id: Principal) : UserInfo {
-        switch(getUserOrDefault(id)){
+    private func getOrCreateUser(id : Principal) : UserInfo {
+        switch (getUserOrDefault(id)) {
             case (?u) u;
-            case (null){
+            case (null) {
                 let newUser : UserInfo = {
                     var subscriptions = Trie.empty();
                 };
@@ -168,11 +204,11 @@ actor RSSBridge {
                 let (newUsers, _) = Trie.put(users, key, Principal.equal, newUser);
                 users := newUsers;
                 newUser;
-            }
+            };
         };
     };
 
-    private func getUserOrDefault(id: Principal) : ?UserInfo {
+    private func getUserOrDefault(id : Principal) : ?UserInfo {
         let key : Trie.Key<Principal> = {
             hash = Principal.hash(id);
             key = id;

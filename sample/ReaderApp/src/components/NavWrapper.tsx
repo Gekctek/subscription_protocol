@@ -20,6 +20,10 @@ type Props = {
     speedDialButtons: ButtonInfo[]
 };
 const NavWrapper: Component<Props> = (props: Props) => {
+    const paddedButtons: (ButtonInfo | null)[] = [...props.quickButtons];
+    while(paddedButtons.length <= 3) {
+        paddedButtons.unshift(null); // Pad buttons to always have them in same place
+    }
     return (
         <div style={{
             height: '100%',
@@ -41,20 +45,20 @@ const NavWrapper: Component<Props> = (props: Props) => {
                 "align-content": 'center',
                 "align-items": "flex-end"
             }}>
-                <For each={props.quickButtons}>
+                <For each={paddedButtons}>
                     {(b) =>
                         <ButtonWrapper>
-                            <Fab onClick={b.onClick}>
-                                {b.icon}
+                            <Fab onClick={b?.onClick} style={{
+                                visibility: b == null ? "hidden" : "inherit"
+                            }}>
+                                {b?.icon}
                             </Fab>
                         </ButtonWrapper>
                     }
                 </For>
-                <Show when={props.speedDialButtons.length > 0}>
-                    <ButtonWrapper>
-                        <SpeedDial options={props.speedDialButtons}/>
-                    </ButtonWrapper>
-                </Show>
+                <ButtonWrapper>
+                    <SpeedDial options={props.speedDialButtons}/>
+                </ButtonWrapper>
             </div >
         </div >
 

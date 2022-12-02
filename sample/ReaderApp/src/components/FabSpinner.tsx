@@ -1,16 +1,18 @@
 import { Component } from "solid-js";
-import MoreVertIcon from "@suid/icons-material/MoreVert";
 import CloseIcon from "@suid/icons-material/Close";
 import { Fab } from "@suid/material";
 
 type Props = {
-    isOpen: Boolean,
+    isOpen: boolean,
+    disabled?: boolean,
     onClick: (e: HTMLButtonElement) => void
 };
 
 const FabSpinner: Component<Props> = (props: Props) => {
 
-    return <Fab onClick={(e) => props.onClick(e.currentTarget)}>
+    return <Fab
+      onClick={(e) => props.onClick(e.currentTarget)}
+      disabled={props.disabled}>
 
       <div style={{
         transition: "all 250ms",

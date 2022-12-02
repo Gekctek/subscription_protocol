@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "solid-js": "^1.5.1",
+    "@solidjs/router": "^0.5.1",
     "@dfinity/agent": "^0.14.1",
     "@dfinity/auth-client": "^0.14.1",
     "@suid/material": "^0.8.0",

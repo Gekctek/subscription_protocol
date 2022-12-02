@@ -2,15 +2,16 @@ import { Component, Match, Switch, For, createMemo } from 'solid-js';
 import { deleteSavedItem, gotoPage, Page, savedItems, savedResource, selectedSavedItem, setSelectedSavedItem, unreadIndex, unreadItems, unreadResource } from '../Signals';
 import { Badge, Divider, List, ListItem, ListItemButton } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
-import { ArrowBackIosNew, RssFeed } from '@suid/icons-material';
+import { ArrowBackIosNew } from '@suid/icons-material';
 import RefreshIcon from '@suid/icons-material/Refresh';
 import ArticleIcon from '@suid/icons-material/Article';
-import End from './EndContent';
-import NavWrapper from './NavWrapper';
-import Item from './Item';
+import End from '../components/EndContent';
+import NavWrapper from '../components/NavWrapper';
+import Item from '../components/Item';
+import { unreadPageButton } from '../CommonButtons';
 
 
-const SavedItems: Component = () => {
+const Saved: Component = () => {
     let backToSavedButton = createMemo(() => {
         return {
             label: "Back",
@@ -33,15 +34,6 @@ const SavedItems: Component = () => {
             label: "Refresh",
             icon: <RefreshIcon />,
             onClick: () => savedResource.refetch()
-        }
-    });
-    let unreadPageButton = createMemo(() => {
-        return {
-            label: "Unread",
-            icon: <Badge badgeContent={(unreadItems()?.length ?? 0) - unreadIndex()} color="primary">
-                <RssFeed />
-            </Badge>,
-            onClick: () => gotoPage(Page.Home)
         }
     });
     return (
@@ -122,4 +114,4 @@ const SavedItems: Component = () => {
     );
 };
 
-export default SavedItems;
+export default Saved;

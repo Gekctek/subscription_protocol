@@ -1,45 +1,21 @@
 import './App.css';
 
-import { Component, Match, Switch } from 'solid-js';
-import LoginButton from './components/LoginButton';
-import { identity } from './api/Identity';
-import Feed from './components/Feed';
-import { isRegistered, page, Page } from './Signals';
-import SavedItems from './components/SavedItems';
-import ManageFeed from './components/ManageFeed';
+import { Component } from 'solid-js';
+import LoginPage from './pages/Login';
+import ManagePage from './pages/Manage';
+import UnreadPage from './pages/Unread';
+import SavedPage from './pages/Saved';
+import { Route, Routes } from '@solidjs/router';
 
 const App: Component = () => {
   return (
     <>
-      <Switch fallback={<div>Oops...</div>}>
-        <Match when={identity() == null}>
-          <div
-            style={{
-              display: 'flex',
-              'justify-content': 'center',
-              'align-items': 'center',
-              height: '100%'
-            }}>
-            <LoginButton />
-          </div>
-        </Match>
-        <Match when={!isRegistered()}>
-          <ManageFeed />
-        </Match>
-        <Match when={identity() != null}>
-          <Switch>
-            <Match when={page() == Page.Home}>
-              <Feed />
-            </Match>
-            <Match when={page() == Page.Manage}>
-              <ManageFeed />
-            </Match>
-            <Match when={page() == Page.Saved}>
-              <SavedItems />
-            </Match>
-          </Switch>
-        </Match>
-      </Switch>
+      <Routes>
+        <Route path="/" component={UnreadPage} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/manage" component={ManagePage} />
+        <Route path="/saved" component={SavedPage} />
+      </Routes>
     </>
   );
 };
