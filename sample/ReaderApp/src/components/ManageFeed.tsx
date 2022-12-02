@@ -1,7 +1,7 @@
 import { Component, createMemo, createResource, createSignal, For } from 'solid-js';
 import { Badge, Button, List, ListItem, TextField } from "@suid/material"
 import NavWrapper from './NavWrapper';
-import { RSSBridgeActor, SubscribeRequest } from '../api/RSSBridgeActor';
+import { RSSBridgeActor, AddRequest, Subscription } from '../api/RSSBridgeActor';
 import { identity } from '../api/Identity';
 import { feedCanisterId } from '../api/CanisterIds';
 import { Identity } from '@dfinity/agent';
@@ -10,34 +10,47 @@ import { Identity } from '@dfinity/agent';
 
 const [feedUrl, setFeedUrl] = createSignal<string | null>(null);
 
-type Subscription = {
-    url: string;
-};
+const [subId, setSubId] = createSignal("Feed1");
 
-async function getRssFeeds(identity: Identity | undefined, info: { value: Subscription[] | undefined; refetching: boolean | unknown }): Promise<Subscription[]> {
-    let getResult = await RSSBridgeActor.getSubscriptions();
-    if ('notSubscribed' in getResult) {
-        return [];
+
+async function getSubscription(identity: Identity | undefined, info: { value: Subscription | null | undefined; refetching: boolean | unknown }): Promise<Subscription | null> {
+    let getResult = await RSSBridgeActor.getSubscription(subId());
+    if('notFound' in getResult) {
+        return null;
     }
-    let items = getResult.ok;
-    return items;
+    return getResult.ok;
 };
 
-const [rssFeeds, rssFeedResource] = createResource(identity, getRssFeeds);
+const [subscription, subscriptionResource] = createResource(identity, getSubscription);
 
-function subscribe(){
+async function subscribe(){
     let feedUrlValue = feedUrl();
-    let userId = identity()?.getPrincipal().toString();
-    if(!feedUrlValue || !userId){
+    if(!feedUrlValue){
         return;
     }
-
-    let request : SubscribeRequest = {
-        contextId: userId,
-        callback: [feedCanisterId, "channelCallback"],
-        channels: [feedUrlValue]
-    };
-    RSSBridgeActor.subscribe(request);
+    let subscriptionValue = subscription();
+    if(!subscriptionValue) {
+        let request : AddRequest  = {
+            id: subId(),
+            callback: [feedCanisterId, "channelCallback"],
+            channels: [feedUrlValue]
+        };
+        subscriptionResource.mutate({
+            id: subId(),
+            channels: [feedUrlValue]
+        })
+        await RSSBridgeActor.addSubscription(request);
+    } else {
+        subscriptionResource.mutate({
+            ...subscriptionValue,
+            channels: [...subscriptionValue.channels, feedUrlValue]
+        })
+        await RSSBridgeActor.updateSubscription({
+            id: subId(),
+            callback: [],
+            channels: [{ add: [feedUrlValue] }]
+        })
+    }
 }
 
 
@@ -46,19 +59,19 @@ const Feed: Component = () => {
     return (
         <NavWrapper quickButtons={[]} speedDialButtons={[]}>
             <TextField
-            label="Feed Url"
-            value={feedUrl()}
-            onChange={(e, v) => {
-                setFeedUrl(v);
-            }}/>
+                label="Feed Url"
+                value={feedUrl()}
+                onChange={(e, v) => {
+                    setFeedUrl(v);
+                }}/>
             <Button onClick={() => subscribe()}>
                 Subscribe
             </Button>
             <List>
-                <For each={rssFeeds()} >
+                <For each={subscription()?.channels} >
                     {(f) => 
                         <ListItem>
-                            {f.url}
+                            {f}
                         </ListItem>
                     }
                 </For>

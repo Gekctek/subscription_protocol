@@ -1,6 +1,6 @@
 import Blob "mo:base/Blob";
 import App "../../src/App";
-import Channel "../../src/Channel";
+import Subscription "../../src/Subscription";
 import ChannelInstance "./ChannelInstance.old";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";

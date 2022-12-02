@@ -4,9 +4,8 @@ import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
 import Hash "mo:base/Hash";
-import Channel "../../src/Channel";
+import Subscription "../../src/Subscription";
 import Content "../../src/Content";
-import Feed "../../src/Feed";
 import App "../../src/App";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
@@ -32,7 +31,7 @@ actor FeedReader {
     type ChannelInfo = {
         owners : [Principal];
         publishers : [Principal];
-        instance : Channel.ChannelActor;
+        instance : Principal; // TODO change to indiv callbacks?
     };
 
     type UserData = {
@@ -70,7 +69,7 @@ actor FeedReader {
         } });
     };
 
-    public shared ({ caller }) func channelCallback(update : Feed.CallbackArgs) : async Feed.CallbackResult {
+    public shared ({ caller }) func channelCallback(update : Subscription.CallbackArgs) : async Subscription.CallbackResult {
 
         switch (update.message) {
             case (#newContent(c)) {
@@ -88,10 +87,9 @@ actor FeedReader {
                 if(currentItem == null){
                     itemMap := newItemMap;
                 };
-                let userId = Principal.fromText(update.contextId);
-                let userData : UserData = switch(getUserData(userId)){
+                let userData : UserData = switch(getUserData(update.userId)){
                     case (null) {
-                        let userKey = {hash=Principal.hash(userId); key=userId};
+                        let userKey = {hash=Principal.hash(update.userId); key=update.userId};
                         let newUser : UserData = { var unread = List.nil(); var saved = List.nil() };
                         let (newUserDataMap, _) = Trie.put(userDataMap, userKey, Principal.equal, newUser);
                         userDataMap := newUserDataMap;

@@ -8,62 +8,94 @@ import { rssBridgeCanisterId } from "./CanisterIds";
 
 
 export type CallbackFunc = [Principal, string];
-export type SubscribeRequest = {
-    contextId: string;
+export type AddRequest = {
+    id: string;
     callback: CallbackFunc;
     channels: [string];
-}
-export type SubscribeResult = { 'ok': null };
-export type UnsubscribeResult = { 'ok': null } | { 'notSubscribed': null };
+};
+export type UpdateRequest = {
+    id: string;
+    callback: [CallbackFunc] | [];
+    channels: [{'add': string[]} | {'remove': string[]} | {'set': string[]}] | [];
+};
+export type DeleteRequest = {
+    id: string;
+};
+export type AddResult = { 'ok': null } | { 'alreadyExists' : null };
+export type UpdateResult = { 'ok': null } | { 'notFound': null };
+export type DeleteResult = { 'ok': null } | { 'notFound': null };
 
 export type Subscription = {
-    url: string
+    id: string,
+    channels: string[]
 };
 
-export type GetSubscriptionsResult = {'ok': Subscription[] };
+export type GetResult = {'ok': Subscription } | { 'notFound': null };
 
 export interface _SERVICE {
-    'getSubscriptions': ActorMethod<[], GetSubscriptionsResult>,
-    'subscribe': ActorMethod<[SubscribeRequest], SubscribeResult>,
-    'unsubscribe': ActorMethod<[string], UnsubscribeResult>,
+    'getSubscription': ActorMethod<[string], GetResult>,
+    'addSubscription': ActorMethod<[AddRequest], AddResult>,
+    'updateSubscription': ActorMethod<[UpdateRequest], UpdateResult>,
+    'deleteSubscription': ActorMethod<[DeleteRequest], DeleteResult>,
     'push': ActorMethod<[string, Content], void>,
 };
 
 const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
-    const SubscribeResult = IDL.Variant({
-        ok: IDL.Null
+    const DeleteRequest = IDL.Record({
+        id: IDL.Text
     });
-    const UnsubscribeResult = IDL.Variant({
+    const AddResult = IDL.Variant({
         ok: IDL.Null,
-        notSubscribed: IDL.Null
+        alreadyExists: IDL.Null
     });
-    let callbackArgIdl = IDL.Record({
+    let CallbackArg = IDL.Record({
         message: IDL.Variant({
             newContent: ContentIDL,
             changeOwner: IDL.Principal
         }),
         channelId: IDL.Text
     });
-    let callbackResult = IDL.Variant({
+    let CallbackResult = IDL.Variant({
         accepted: IDL.Null,
         notAuthorized: IDL.Null
     });
-    let callbackIdl = IDL.Func([callbackArgIdl], [callbackResult], []);
-    let SubscribeRequest = IDL.Record({
-        contextId: IDL.Text,
-        callback: callbackIdl,
+    let Callback = IDL.Func([CallbackArg], [CallbackResult], []);
+    let AddRequest = IDL.Record({
+        id: IDL.Text,
+        callback: Callback,
         channels: IDL.Vec(IDL.Text)
     });
     let Subscription = IDL.Record({
-        url: IDL.Text
+        id: IDL.Text,
+        channels: IDL.Vec(IDL.Text),
+        callback: Callback
     });
-    let GetSubscriptionsResult = IDL.Variant({
-        ok : IDL.Vec(Subscription)
+    let GetResult = IDL.Variant({
+        ok : Subscription,
+        notFound: IDL.Null
+    });
+    let DeleteResult = IDL.Variant({
+        ok: IDL.Null,
+        notFound: IDL.Null
+    });
+    let UpdateRequest = IDL.Record({
+        id: IDL.Text,
+        callback: IDL.Opt(Callback),
+        channels: IDL.Opt(IDL.Variant({
+            add: IDL.Vec(IDL.Text),
+            remove: IDL.Vec(IDL.Text),
+            set: IDL.Vec(IDL.Text)
+        }))
+    });
+    let UpdateResult = IDL.Variant({
+        ok: IDL.Null,
+        notFound: IDL.Null
     });
     return IDL.Service({
-        'getSubscriptions': IDL.Func([], [GetSubscriptionsResult], ["query"]),
-        'subscribe': IDL.Func([SubscribeRequest], [SubscribeResult], []),
-        'unsubscribe': IDL.Func([IDL.Text], [UnsubscribeResult], []),
+        'getSubscription': IDL.Func([IDL.Text], [GetResult], ["query"]),
+        'addSubscription': IDL.Func([AddRequest], [AddResult], []),
+        'updateSubscription': IDL.Func([UpdateRequest], [UpdateResult], []),
+        'deleteSubscription': IDL.Func([DeleteRequest], [DeleteResult], []),
         'push': IDL.Func([IDL.Text, ContentIDL], [], [])
     });
 };

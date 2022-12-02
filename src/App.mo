@@ -1,4 +1,3 @@
-import Channel "./Channel";
 
 module {
     public type RegistrationResult = {

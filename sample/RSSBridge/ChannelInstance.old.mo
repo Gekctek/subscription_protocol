@@ -6,9 +6,7 @@ import Blob "mo:base/Blob";
 import Array "mo:base/Array";
 import Principal "mo:base/Principal";
 import Trie "mo:base/Trie";
-import Channel "../../src/Channel";
 import Content "../../src/Content";
-import Feed "../../src/Feed";
 
 // actor class ChannelInstance(channelId : Text, channelOwner : Principal) {
 

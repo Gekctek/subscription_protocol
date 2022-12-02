@@ -1,7 +1,7 @@
 import { Component, createSignal } from "solid-js";
 import { createChannelActor } from "../api/ChannelActor";
 import { ContentApp } from "../api/ContentAppActor";
-import { feedCanisterId } from "../Signals";
+import { feedCanisterId } from "../api/CanisterIds";
 
 
 const [channelId, setChannelId] = createSignal<string>("");
@@ -28,12 +28,7 @@ async function subscribe(e: SubmitEvent) {
     }
     let channel = channelGetResult.ok;
     let actor = createChannelActor(channel.instance);
-    let feedCanister = feedCanisterId();
-    if (feedCanister == null) {
-        alert('no feed specified');
-        return;
-    }
-    let result = await actor.subscribe([feedCanister, "channelCallback"], {});
+    let result = await actor.subscribe([feedCanisterId, "channelCallback"], {});
     console.log(result);
 }
 
