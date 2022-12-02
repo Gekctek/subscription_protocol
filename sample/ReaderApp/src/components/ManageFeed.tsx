@@ -4,6 +4,7 @@ import NavWrapper from './NavWrapper';
 import { RSSBridgeActor, SubscribeRequest } from '../api/RSSBridgeActor';
 import { identity } from '../api/Identity';
 import { feedCanisterId } from '../api/CanisterIds';
+import { Identity } from '@dfinity/agent';
 
 
 
@@ -13,7 +14,7 @@ type Subscription = {
     url: string;
 };
 
-async function getRssFeeds(a: boolean | undefined, info: { value: Subscription[] | undefined; refetching: boolean | unknown }): Promise<Subscription[]> {
+async function getRssFeeds(identity: Identity | undefined, info: { value: Subscription[] | undefined; refetching: boolean | unknown }): Promise<Subscription[]> {
     let getResult = await RSSBridgeActor.getSubscriptions();
     if ('notSubscribed' in getResult) {
         return [];
@@ -22,7 +23,7 @@ async function getRssFeeds(a: boolean | undefined, info: { value: Subscription[]
     return items;
 };
 
-const [rssFeeds, rssFeedResource] = createResource(getRssFeeds);
+const [rssFeeds, rssFeedResource] = createResource(identity, getRssFeeds);
 
 function subscribe(){
     let feedUrlValue = feedUrl();

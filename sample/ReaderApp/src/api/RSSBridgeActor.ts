@@ -20,7 +20,7 @@ export type Subscription = {
     url: string
 };
 
-export type GetSubscriptionsResult = {'ok': Subscription[] } | { 'notSubscribed': null };
+export type GetSubscriptionsResult = {'ok': Subscription[] };
 
 export interface _SERVICE {
     'getSubscriptions': ActorMethod<[], GetSubscriptionsResult>,
@@ -54,9 +54,12 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
         callback: callbackIdl,
         channels: IDL.Vec(IDL.Text)
     });
-    let GetSubscriptionsResult = IDL.Vec(IDL.Record({
+    let Subscription = IDL.Record({
         url: IDL.Text
-    }));
+    });
+    let GetSubscriptionsResult = IDL.Variant({
+        ok : IDL.Vec(Subscription)
+    });
     return IDL.Service({
         'getSubscriptions': IDL.Func([], [GetSubscriptionsResult], ["query"]),
         'subscribe': IDL.Func([SubscribeRequest], [SubscribeResult], []),

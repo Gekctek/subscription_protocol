@@ -2,8 +2,11 @@ import Feed "./Feed";
 import Content "./Content";
 
 module {
+
+    public type SubscriptionId = Text;
+
     public type SubscribeResult = {
-        #ok;
+        #ok: SubscriptionId;
     };
     public type UnsubscribeResult = {
         #ok;
@@ -24,8 +27,13 @@ module {
     };
 
     public type SubscribeRequest = {
+        subscriptionId : SubscriptionId;
         callback: Feed.Callback;
-        contextId : Text;
         channels: [Text];
+    };
+
+    public type UnsubscribeRequest = {
+        subscriptionId : SubscriptionId;
+        channels: ?[Text];
     };
 };

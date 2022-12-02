@@ -1,3 +1,4 @@
+import List "mo:base/List";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Trie "mo:base/Trie";
@@ -15,11 +16,17 @@ import Cycles "mo:base/ExperimentalCycles";
 
 actor RSSBridge {
     
-    type Subscriber = {
-        // TODO do multiple contexts per sub
-        var contextId : Text;
+
+    type Subscription = {
         var callback : Feed.Callback; // TODO is the use case for multiple callbacks worth it or what can do as an alternative?
-        var channels : [Text];
+        var channels : List.List<Text>;
+    };
+
+    type SubscriptionId = Text;
+
+    type UserInfo = {
+        // TODO do multiple contexts per sub
+        var subscriptions: Trie.Trie<SubscriptionId, Subscription>;
     };
 
     type Feed = {
@@ -28,39 +35,53 @@ actor RSSBridge {
 
     private stable var feeds : Trie.Trie<Text, Feed> = Trie.empty();
     
-    private stable var subscribers : Trie.Trie<Principal, Subscriber> = Trie.empty();
+    private stable var users : Trie.Trie<Principal, UserInfo> = Trie.empty();
 
     public shared ({ caller }) func subscribe(request : Channel.SubscribeRequest) : async Channel.SubscribeResult {
         let key : Trie.Key<Principal> = {
             hash = Principal.hash(caller);
             key = caller;
         };
-        let newSubcriber : Subscriber = {
-            var contextId = request.contextId;
-            var callback = request.callback;
-            var channels = request.channels;
+        switch(Trie.get(users, key, Principal.equal)) {
+            case (?user) {
+                let subKey = {
+                    hash = Text.hash(request.subscriptionId);
+                    key = request.subscriptionId;
+                };
+                switch(Trie.get(user.subscriptions, subKey, Text.equal)) {
+                    case (?sub){
+                        sub.channels := List.append<Text>(sub.channels, List.fromArray(request.channels));
+                    }
+                };
+                
+            };
+            case (null) {
+                let newUser : UserInfo = {
+                    var subscriptions = Trie.empty();
+                };
+
+                Trie.put(subscriptions, key, Principal.equal, newSubscription);
+                // Add new subscriber
+                let (newSubscribers, _) = Trie.put(subscribers, key, Principal.equal, newSubcriber);
+                subscribers := newSubscribers;
+            };
         };
-        // Add new subscriber
-        let (newSubscribers, _) = Trie.put(subscribers, key, Principal.equal, newSubcriber);
-        subscribers := newSubscribers;
         #ok;
     };
 
-    public shared ({ caller }) func unsubscribe() : async Channel.UnsubscribeResult {
+    public shared ({ caller }) func unsubscribe(request: Channel.UnsubscribeRequest) : async Channel.UnsubscribeResult {
         let key : Trie.Key<Principal> = {
             hash = Principal.hash(caller);
             key = caller;
         };
         // Remove subscriber
-        let (newSubscribers, removedSub) = Trie.remove(subscribers, key, Principal.equal);
-
-        switch (removedSub) {
-            case (null) #notSubscribed;
-            case (?s) {
-                subscribers := newSubscribers;
+        switch(Trie.get(subscribers, key, Principal.equal)){
+            case (?sub) {
+                sub.channels := 
                 #ok;
             };
-        };
+            case (null) #notSubscribed;
+        }
     };
 
     public shared query  ({ caller }) func getSubscriptions() : async Channel.GetSubscriptionsResult {
