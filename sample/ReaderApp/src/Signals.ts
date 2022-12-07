@@ -1,8 +1,7 @@
 import { createResource, createSignal } from "solid-js";
-import type { Principal } from "@dfinity/principal";
 import { FeedActor, FeedItem, GetResult, _SERVICE } from "./api/FeedActor";
-import { ActorMethod, Identity } from "@dfinity/agent";
-import { identity } from "./api/Identity";
+import { ActorMethod } from "@dfinity/agent";
+import { Navigator } from "@solidjs/router";
 
 
 const minItems = 10;
@@ -12,7 +11,7 @@ export const [unreadIndex, setUnreadIndex] = createSignal<number>(0);
 
 export const [isRegistered, setIsRegistered] = createSignal(true);
 
-async function fetchUnread(identity: Identity | null, info: { value: FeedItem[] | undefined; refetching: boolean | unknown }): Promise<FeedItem[]> {
+async function fetchUnread(b: boolean | null, info: { value: FeedItem[] | undefined; refetching: boolean | unknown }): Promise<FeedItem[]> {
 
     const unreadItemCount = (info.value?.length ?? 0) - unreadIndex() - 1;
     if (unreadItemCount > minItems) {
@@ -28,9 +27,9 @@ async function fetchUnread(identity: Identity | null, info: { value: FeedItem[] 
 };
 
 
-export const [unreadItems, unreadResource] = createResource(identity, fetchUnread);
+export const [unreadItems, unreadResource] = createResource(fetchUnread);
 
-export async function fetchSaved(identity: Identity | undefined, info: { value: FeedItem[] | undefined; refetching: boolean | unknown }): Promise<FeedItem[]> {
+export async function fetchSaved(b: boolean | undefined, info: { value: FeedItem[] | undefined; refetching: boolean | unknown }): Promise<FeedItem[]> {
     return fetchInternal(info, FeedActor.getSaved);
 }
 async function fetchInternal(
@@ -56,7 +55,7 @@ async function fetchInternal(
     return info.value.concat(items);
 };
 
-export const [savedItems, savedResource] = createResource(identity, fetchSaved);
+export const [savedItems, savedResource] = createResource(fetchSaved);
 
 export const [selectedSavedItem, setSelectedSavedItem] = createSignal<FeedItem | null>(null);
 
@@ -106,15 +105,15 @@ export function previousUnread() {
 };
 
 export enum Page {
-    Home,
-    Saved,
-    Manage,
-    Archive
+    Home = "/",
+    Saved = "/saved",
+    Manage = "/manage",
+    Login = "/login",
 };
 
-export const [page, setPage] = createSignal<Page>(Page.Home);
 
-export function gotoPage(page: Page) {
+
+export function gotoPage(navigate: Navigator, page: Page) {
     switch (page) {
         case Page.Home:
             if (((unreadItems()?.length ?? 0) - unreadIndex()) < 1) {
@@ -126,6 +125,8 @@ export function gotoPage(page: Page) {
                 savedResource.refetch();
             };
             break;
+        default:
+            break;
     };
-    setPage(page);
+    navigate(page);
 }

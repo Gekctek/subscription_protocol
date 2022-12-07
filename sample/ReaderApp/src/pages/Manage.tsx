@@ -15,7 +15,7 @@ const [feedUrl, setFeedUrl] = createSignal<string | null>(null);
 const [subId, setSubId] = createSignal("Feed1");
 
 
-async function getSubscription(identity: Identity | undefined, info: { value: Subscription | null | undefined; refetching: boolean | unknown }): Promise<Subscription | null> {
+async function getSubscription(b: boolean | undefined, info: { value: Subscription | null | undefined; refetching: boolean | unknown }): Promise<Subscription | null> {
     let getResult = await RSSBridgeActor.getSubscription(subId());
     if('notFound' in getResult) {
         return null;
@@ -23,7 +23,7 @@ async function getSubscription(identity: Identity | undefined, info: { value: Su
     return getResult.ok;
 };
 
-const [subscription, subscriptionResource] = createResource(identity, getSubscription);
+const [subscription, subscriptionResource] = createResource(getSubscription);
 
 async function subscribe(){
     let feedUrlValue = feedUrl();

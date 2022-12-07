@@ -21,7 +21,7 @@ type Props = {
 };
 const NavWrapper: Component<Props> = (props: Props) => {
     const paddedButtons: (ButtonInfo | null)[] = [...props.quickButtons];
-    while(paddedButtons.length <= 3) {
+    while (paddedButtons.length <= 3) {
         paddedButtons.unshift(null); // Pad buttons to always have them in same place
     }
     return (
@@ -31,6 +31,7 @@ const NavWrapper: Component<Props> = (props: Props) => {
             <div style={{
                 height: '100%',
                 "overflow-y": 'auto',
+                "overflow-x": 'hidden',
                 'margin-bottom': '76px'
             }}>
                 {props.children}
@@ -57,7 +58,7 @@ const NavWrapper: Component<Props> = (props: Props) => {
                     }
                 </For>
                 <ButtonWrapper>
-                    <SpeedDial options={props.speedDialButtons}/>
+                    <SpeedDial options={props.speedDialButtons} />
                 </ButtonWrapper>
             </div >
         </div >

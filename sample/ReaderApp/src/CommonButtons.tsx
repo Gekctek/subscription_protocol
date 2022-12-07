@@ -4,31 +4,37 @@ import { gotoPage, Page, savedItems, unreadIndex, unreadItems } from "./Signals"
 import ArticleIcon from '@suid/icons-material/Article';
 import SettingsIcon from '@suid/icons-material/Settings';
 import RssFeedIcon from '@suid/icons-material/RssFeed';
+import { useNavigate } from "@solidjs/router";
 
 
 
-export const manageFeedButton = createMemo(() => {
+export const manageFeedButton = () => {
+    const navigate = useNavigate();
     return {
         label: "Manage",
         icon: <SettingsIcon />,
-        onClick: () => gotoPage(Page.Manage)
+        onClick: () => {
+            gotoPage(navigate, Page.Manage);
+        }
     } 
-});
-export const savedPageButton = createMemo(() => {
+};
+export const savedPageButton = () => {
+    const navigate = useNavigate();
     return {
         label: "Saved",
         icon: <Badge badgeContent={savedItems()?.length ?? 0} color="primary">
             <ArticleIcon />
         </Badge>,
-        onClick: () => gotoPage(Page.Saved)
+        onClick: () => gotoPage(navigate, Page.Saved)
     }
-});
-export const unreadPageButton = createMemo(() => {
+};
+export const unreadPageButton = () => {
+    const navigate = useNavigate();
     return {
         label: "Unread",
         icon: <Badge badgeContent={(unreadItems()?.length ?? 0) - unreadIndex()} color="primary">
             <RssFeedIcon />
         </Badge>,
-        onClick: () => gotoPage(Page.Home)
+        onClick: () => gotoPage(navigate, Page.Home)
     }
-});
+};

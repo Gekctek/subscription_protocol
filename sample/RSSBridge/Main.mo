@@ -42,7 +42,7 @@ actor RSSBridge {
             key = request.id;
         };
         for (c in Iter.fromArray(request.channels)) {
-            let _ = await addFeed(c); // TODO
+            let _ = addFeed(c); // TODO
         };
         let newSubscription : SubscriptionInfo = {
             var callback = request.callback;
@@ -61,7 +61,7 @@ actor RSSBridge {
 
     type AddFeedResult = { #ok; #alreadyExists };
 
-    public shared func addFeed(url : Text) : async AddFeedResult {
+    private func addFeed(url : Text) : AddFeedResult {
         // TODO secure and test the feed
         let key = {
             hash = Text.hash(url);

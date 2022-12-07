@@ -25,3 +25,22 @@ code {
 img {
   max-width: 100%;
 }
+
+.swiper {
+  display: flex;
+}
+
+.swiper-slide {
+  flex-shrink: 0;
+  flex-grow: 1;
+  width: 100%;
+}
+.swiper-previous {
+  
+}
+.swiper-current {
+  
+}
+.swiper-next {
+  
+}
