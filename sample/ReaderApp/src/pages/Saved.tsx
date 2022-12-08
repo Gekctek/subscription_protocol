@@ -1,4 +1,4 @@
-import { Component, Match, Switch, For, createMemo, createSignal, createResource } from 'solid-js';
+import { Component, Match, Switch, For, createMemo, createSignal, createResource, Show } from 'solid-js';
 import { Divider, List, ListItem, ListItemButton } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
 import { ArrowBackIosNew } from '@suid/icons-material';
@@ -76,14 +76,16 @@ const Saved: Component = () => {
                                                     'flex-wrap': 'nowrap',
                                                     'align-items': 'center'
                                                 }}>
-                                                    <img
-                                                        style={{
-                                                            "max-width": "150px",
-                                                            "max-height": "150px",
-                                                            "margin": i() % 2 == 0 ? "0 10px 0 0" : "0 0 0 10px"
-                                                        }}
-                                                        src={item.content.imageLink[0]}
-                                                        alt="Content Image" />
+                                                    <Show when={item.content.imageLink.length > 0}>
+                                                        <img
+                                                            style={{
+                                                                "max-width": "150px",
+                                                                "max-height": "150px",
+                                                                "margin": i() % 2 == 0 ? "0 10px 0 0" : "0 0 0 10px"
+                                                            }}
+                                                            src={item.content.imageLink[0]}
+                                                            alt="Content Image" />
+                                                    </Show>
                                                     <div>{item.content.title}</div>
                                                 </div>
                                             </ListItemButton>

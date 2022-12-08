@@ -124,7 +124,9 @@ export async function saveItemForLater() {
         FeedActor.markItemAsRead(feedItemValue.hash);
         let savedList = savedItems() ?? [];
         savedResource.mutate(savedList.concat([feedItemValue]));
-        let response = await FeedActor.saveItemForLater(feedItemValue.hash);
+        FeedActor.saveItemForLater(feedItemValue.hash)
+            // TODO
+            .catch((e) => console.log(`Failed to save item '${feedItemValue!.hash}': ` + e));
     }
 };
 export function previousUnread() {

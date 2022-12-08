@@ -45,7 +45,7 @@ const Item: Component<Props> = (props: Props) => {
                     <span>{props.value.content.date}</span>
                 </div>
 
-                <Show when={props.value.content.imageLink?.length ?? 0 > 0}>
+                <Show when={props.value.content.imageLink.length > 0}>
                     <div style={{
                         margin: "0 0 8px 0"
                     }}>
