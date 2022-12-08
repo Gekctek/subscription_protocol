@@ -21,16 +21,16 @@ export type UpdateRequest = {
 export type DeleteRequest = {
     id: string;
 };
-export type AddResult = { 'ok': null } | { 'alreadyExists' : null };
-export type UpdateResult = { 'ok': null } | { 'notFound': null };
-export type DeleteResult = { 'ok': null } | { 'notFound': null };
+export type AddResult = { 'ok': null } | { 'alreadyExists' : null } | {'notAuthenticated': null};
+export type UpdateResult = { 'ok': null } | { 'notFound': null } | {'notAuthenticated': null};
+export type DeleteResult = { 'ok': null } | { 'notFound': null } | {'notAuthenticated': null};
 
 export type Subscription = {
     id: string,
     channels: string[]
 };
 
-export type GetResult = {'ok': Subscription } | { 'notFound': null };
+export type GetResult = {'ok': Subscription } | { 'notFound': null } | {'notAuthenticated': null};
 
 export interface _SERVICE {
     'getSubscription': ActorMethod<[string], GetResult>,
@@ -46,7 +46,8 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     });
     const AddResult = IDL.Variant({
         ok: IDL.Null,
-        alreadyExists: IDL.Null
+        alreadyExists: IDL.Null,
+        notAuthenticated: IDL.Null
     });
     let CallbackArg = IDL.Record({
         message: IDL.Variant({
@@ -72,11 +73,13 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     });
     let GetResult = IDL.Variant({
         ok : Subscription,
-        notFound: IDL.Null
+        notFound: IDL.Null,
+        notAuthenticated: IDL.Null
     });
     let DeleteResult = IDL.Variant({
         ok: IDL.Null,
-        notFound: IDL.Null
+        notFound: IDL.Null,
+        notAuthenticated: IDL.Null
     });
     let UpdateRequest = IDL.Record({
         id: IDL.Text,
@@ -89,7 +92,8 @@ const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
     });
     let UpdateResult = IDL.Variant({
         ok: IDL.Null,
-        notFound: IDL.Null
+        notFound: IDL.Null,
+        notAuthenticated: IDL.Null
     });
     return IDL.Service({
         'getSubscription': IDL.Func([IDL.Text], [GetResult], ["query"]),

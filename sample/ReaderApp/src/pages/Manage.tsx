@@ -16,7 +16,7 @@ const [subId, setSubId] = createSignal("Feed1");
 
 async function getSubscription(b: boolean | undefined, info: { value: Subscription | null | undefined; refetching: boolean | unknown }): Promise<Subscription | null> {
     let getResult = await RSSBridgeActor.getSubscription(subId());
-    if ('notFound' in getResult) {
+    if ('notFound' in getResult || 'notAuthenticated' in getResult) {
         return null;
     }
     return getResult.ok;
