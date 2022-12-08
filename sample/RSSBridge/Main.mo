@@ -35,7 +35,10 @@ actor RSSBridge {
     private stable var users : Trie.Trie<Principal, UserInfo> = Trie.empty();
 
     public shared ({ caller }) func addSubscription(request : Subscription.AddRequest) : async Subscription.AddResult {
-        let user : UserInfo = getOrCreateUser(caller);
+        let user : UserInfo = switch (getOrCreateUser(caller)) {
+            case (#ok(u)) u;
+            case (#notAuthenticated) return #notAuthenticated;
+        };
 
         let subKey = {
             hash = Text.hash(request.id);
@@ -78,9 +81,10 @@ actor RSSBridge {
     };
 
     public shared ({ caller }) func updateSubscription(request : Subscription.UpdateRequest) : async Subscription.UpdateResult {
-        let user : UserInfo = switch (getUserOrDefault(caller)) {
-            case (null) return #notFound;
-            case (?u) u;
+        let user : UserInfo = switch (getUser(caller)) {
+            case (#notFound) return #notFound;
+            case (#notAuthenticated) return #notAuthenticated;
+            case (#ok(u)) u;
         };
 
         let subKey = {
@@ -118,8 +122,10 @@ actor RSSBridge {
     public shared ({ caller }) func deleteSubscription(request : Subscription.DeleteRequest) : async Subscription.DeleteResult {
 
         // Remove subscriber
-        switch (getUserOrDefault(caller)) {
-            case (?user) {
+        switch (getUser(caller)) {
+            case (#notFound) #notFound;
+            case (#notAuthenticated) #notAuthenticated;
+            case (#ok(user)) {
                 let subKey = {
                     hash = Text.hash(request.id);
                     key = request.id;
@@ -128,14 +134,14 @@ actor RSSBridge {
                 user.subscriptions := newSubscriptions;
                 #ok;
             };
-            case (null) #notFound;
         };
     };
 
     public shared query ({ caller }) func getSubscription(id : Subscription.Id) : async Subscription.GetResult {
-        switch (getUserOrDefault(caller)) {
-            case (null) #notFound;
-            case (?user) {
+        switch (getUser(caller)) {
+            case (#notFound) #notFound;
+            case (#notAuthenticated) #notAuthenticated;
+            case (#ok(user)) {
                 let subKey = {
                     hash = Text.hash(id);
                     key = id;
@@ -189,10 +195,14 @@ actor RSSBridge {
         };
     };
 
-    private func getOrCreateUser(id : Principal) : UserInfo {
-        switch (getUserOrDefault(id)) {
-            case (?u) u;
-            case (null) {
+    private func getOrCreateUser(id : Principal) : {
+        #ok : UserInfo;
+        #notAuthenticated;
+    } {
+        let user = switch (getUser(id)) {
+            case (#ok(u)) u;
+            case (#notAuthenticated) return #notAuthenticated;
+            case (#notFound) {
                 let newUser : UserInfo = {
                     var subscriptions = Trie.empty();
                 };
@@ -206,14 +216,26 @@ actor RSSBridge {
                 newUser;
             };
         };
+        #ok(user);
     };
 
-    private func getUserOrDefault(id : Principal) : ?UserInfo {
+    private func getUser(id : Principal) : {
+        #ok : UserInfo;
+        #notFound;
+        #notAuthenticated;
+    } {
+        if (Principal.isAnonymous(id)) {
+            return #notAuthenticated;
+        };
         let key : Trie.Key<Principal> = {
             hash = Principal.hash(id);
             key = id;
         };
-        Trie.get(users, key, Principal.equal);
+        switch (Trie.get(users, key, Principal.equal)) {
+            case (null) #notFound;
+            case (?user) #ok(user);
+        }
+
     };
 
 };

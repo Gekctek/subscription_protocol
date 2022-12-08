@@ -1,7 +1,7 @@
 import { createResource, createSignal } from "solid-js";
 import { ActorMethod } from "@dfinity/agent";
 import { FeedActor, FeedItem, GetResult } from "../api/FeedActor";
-import { setIsRegistered } from "../api/Identity";
+import { setIsRegistered } from "./Identity";
 
 
 export const [unreadIndex, setUnreadIndex] = createSignal<number>(0);

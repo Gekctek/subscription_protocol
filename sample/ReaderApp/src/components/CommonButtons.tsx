@@ -4,8 +4,10 @@ import { savedItems, unreadIndex, unreadItems } from "../common/Feed";
 import ArticleIcon from '@suid/icons-material/Article';
 import SettingsIcon from '@suid/icons-material/Settings';
 import RssFeedIcon from '@suid/icons-material/RssFeed';
+import LogoutIcon from '@suid/icons-material/Logout';
 import { useNavigate } from "@solidjs/router";
 import { Page } from "../common/Page";
+import { logout } from "../common/Identity";
 
 
 
@@ -35,5 +37,13 @@ export const unreadPageButton = () => {
             <RssFeedIcon />
         </Badge>,
         onClick: () => navigate(Page.Home)
+    }
+};
+export const logoutButton = () => {
+    const navigate = useNavigate();
+    return {
+        label: "Logout",
+        icon: <LogoutIcon />,
+        onClick: () => logout(navigate)
     }
 };

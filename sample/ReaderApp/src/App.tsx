@@ -5,11 +5,16 @@ import LoginPage from './pages/Login';
 import ManagePage from './pages/Manage';
 import UnreadPage from './pages/Unread';
 import SavedPage from './pages/Saved';
-import { Route, Routes } from '@solidjs/router';
+import { Route, Routes, useNavigate } from '@solidjs/router';
 import { Page } from './common/Page';
+import { identity } from './common/Identity';
 
 
 const App: Component = () => {
+  if (!identity()) {
+    const navigate = useNavigate();
+    navigate(Page.Login);
+  }
   return (
     <>
       <Routes>

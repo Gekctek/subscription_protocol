@@ -4,7 +4,7 @@ import End from '../components/EndContent';
 import { Bookmark, RssFeed } from '@suid/icons-material';
 import NavWrapper from '../components/NavWrapper';
 import Item from '../components/Item';
-import { manageFeedButton, savedPageButton } from '../components/CommonButtons';
+import { logoutButton, manageFeedButton, savedPageButton } from '../components/CommonButtons';
 import { FeedActor, FeedItem } from '../api/FeedActor';
 import Swiper, { SwiperStore } from '../components/Swiper';
 import { allUnreadItemsRetrieved, savedItems, savedResource, setUnreadIndex, unreadIndex, unreadItems, unreadResource } from '../common/Feed';
@@ -61,12 +61,14 @@ const Unread: Component = () => {
             return [
                 refreshButton(),
                 manageFeedButton(),
-                savedPageButton()
+                savedPageButton(),
+                logoutButton()
             ];
         }
         return [
             refreshButton(),
-            manageFeedButton()
+            manageFeedButton(),
+            logoutButton()
         ];
     });
 

@@ -3,7 +3,6 @@ import { Button, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Tex
 import DeleteIcon from "@suid/icons-material/Delete"
 import NavWrapper from '../components/NavWrapper';
 import { RSSBridgeActor, AddRequest, Subscription } from '../api/RSSBridgeActor';
-import { identity } from '../api/Identity';
 import { feedCanisterId } from '../api/CanisterIds';
 import { Identity } from '@dfinity/agent';
 import { savedPageButton, unreadPageButton } from '../components/CommonButtons';

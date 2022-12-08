@@ -1,7 +1,4 @@
-
-import WbSunnyIcon from '@suid/icons-material/WbSunny';
-import { Fab } from '@suid/material';
-import { Component, For, JSXElement } from 'solid-js';
+import { Component, JSXElement } from 'solid-js';
 
 
 type Props = {

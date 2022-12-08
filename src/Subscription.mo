@@ -6,9 +6,9 @@ module {
     public type ChannelId = Text;
 
     public type Subscription = {
-        id: Id;
-        callback: Callback;
-        channels: [Text];
+        id : Id;
+        callback : Callback;
+        channels : [Text];
     };
 
     public type Callback = shared (update : CallbackArgs) -> async CallbackResult;
@@ -18,26 +18,25 @@ module {
             #newContent : Content.Content;
             #changeOwner : Principal;
         };
-        userId: Principal;
+        userId : Principal;
         subscriptionId : Id;
         channelId : Text;
     };
-    
 
     public type AddRequest = {
         id : Id;
-        callback: Callback;
-        channels: [ChannelId];
+        callback : Callback;
+        channels : [ChannelId];
     };
 
     public type UpdateRequest = {
         id : Id;
-        callback: ?Callback;
-        channels: ?{
-            #add: [ChannelId];
-            #remove: [ChannelId];
-            #set: [ChannelId];
-        }
+        callback : ?Callback;
+        channels : ?{
+            #add : [ChannelId];
+            #remove : [ChannelId];
+            #set : [ChannelId];
+        };
     };
 
     public type DeleteRequest = {
@@ -47,22 +46,26 @@ module {
     public type AddResult = {
         #ok;
         #alreadyExists;
+        #notAuthenticated;
     };
 
     public type UpdateResult = {
         #ok;
         #notFound;
+        #notAuthenticated;
     };
 
     public type DeleteResult = {
         #ok;
         #notFound;
+        #notAuthenticated;
     };
 
     public type GetResult = {
-        #ok: Subscription;
+        #ok : Subscription;
         #notFound;
-    };    
+        #notAuthenticated;
+    };
 
     public type CallbackResult = {
         #accepted;

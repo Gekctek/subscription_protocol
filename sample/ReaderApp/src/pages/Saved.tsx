@@ -7,7 +7,7 @@ import ArticleIcon from '@suid/icons-material/Article';
 import End from '../components/EndContent';
 import NavWrapper from '../components/NavWrapper';
 import Item from '../components/Item';
-import { unreadPageButton } from '../components/CommonButtons';
+import { logoutButton, unreadPageButton } from '../components/CommonButtons';
 import { FeedActor, FeedItem } from '../api/FeedActor';
 import { savedItems, savedResource } from '../common/Feed';
 
@@ -49,7 +49,7 @@ const Saved: Component = () => {
                         backToSavedButton(),
                         deleteSavedButton()
                     ]}
-                    speedDialButtons={[]}>
+                    speedDialButtons={[logoutButton()]}>
                     <Item value={selectedSavedItem()!} />
                 </NavWrapper>
             </Match>
