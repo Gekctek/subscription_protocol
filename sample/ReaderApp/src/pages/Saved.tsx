@@ -1,6 +1,5 @@
-import { Component, Match, Switch, For, createMemo } from 'solid-js';
-import { deleteSavedItem, gotoPage, Page, savedItems, savedResource, selectedSavedItem, setSelectedSavedItem, unreadIndex, unreadItems, unreadResource } from '../Signals';
-import { Badge, Divider, List, ListItem, ListItemButton } from "@suid/material"
+import { Component, Match, Switch, For, createMemo, createSignal, createResource } from 'solid-js';
+import { Divider, List, ListItem, ListItemButton } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
 import { ArrowBackIosNew } from '@suid/icons-material';
 import RefreshIcon from '@suid/icons-material/Refresh';
@@ -8,10 +7,16 @@ import ArticleIcon from '@suid/icons-material/Article';
 import End from '../components/EndContent';
 import NavWrapper from '../components/NavWrapper';
 import Item from '../components/Item';
-import { unreadPageButton } from '../CommonButtons';
+import { unreadPageButton } from '../components/CommonButtons';
+import { FeedActor, FeedItem } from '../api/FeedActor';
+import { savedItems, savedResource } from '../common/Feed';
+
 
 
 const Saved: Component = () => {
+
+    const [selectedSavedItem, setSelectedSavedItem] = createSignal<FeedItem | null>(null);
+
     let backToSavedButton = createMemo(() => {
         return {
             label: "Back",
@@ -115,3 +120,11 @@ const Saved: Component = () => {
 };
 
 export default Saved;
+
+
+
+export async function deleteSavedItem(hash: number) {
+    let savedItemList = savedItems()?.filter((i) => i.hash != hash) ?? [];
+    savedResource.mutate(savedItemList);
+    await FeedActor.deleteSavedItem(hash);
+};

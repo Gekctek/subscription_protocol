@@ -6,7 +6,7 @@ import ManagePage from './pages/Manage';
 import UnreadPage from './pages/Unread';
 import SavedPage from './pages/Saved';
 import { Route, Routes } from '@solidjs/router';
-import { Page } from './Signals';
+import { Page } from './common/Page';
 
 
 const App: Component = () => {

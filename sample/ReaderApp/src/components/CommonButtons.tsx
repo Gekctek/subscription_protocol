@@ -1,10 +1,11 @@
 import { Badge } from "@suid/material";
 import { createMemo } from "solid-js";
-import { gotoPage, Page, savedItems, unreadIndex, unreadItems } from "./Signals";
+import { savedItems, unreadIndex, unreadItems } from "../common/Feed";
 import ArticleIcon from '@suid/icons-material/Article';
 import SettingsIcon from '@suid/icons-material/Settings';
 import RssFeedIcon from '@suid/icons-material/RssFeed';
 import { useNavigate } from "@solidjs/router";
+import { Page } from "../common/Page";
 
 
 
@@ -13,10 +14,8 @@ export const manageFeedButton = () => {
     return {
         label: "Manage",
         icon: <SettingsIcon />,
-        onClick: () => {
-            gotoPage(navigate, Page.Manage);
-        }
-    } 
+        onClick: () => navigate(Page.Manage)
+    }
 };
 export const savedPageButton = () => {
     const navigate = useNavigate();
@@ -25,7 +24,7 @@ export const savedPageButton = () => {
         icon: <Badge badgeContent={savedItems()?.length ?? 0} color="primary">
             <ArticleIcon />
         </Badge>,
-        onClick: () => gotoPage(navigate, Page.Saved)
+        onClick: () => navigate(Page.Saved)
     }
 };
 export const unreadPageButton = () => {
@@ -35,6 +34,6 @@ export const unreadPageButton = () => {
         icon: <Badge badgeContent={(unreadItems()?.length ?? 0) - unreadIndex()} color="primary">
             <RssFeedIcon />
         </Badge>,
-        onClick: () => gotoPage(navigate, Page.Home)
+        onClick: () => navigate(Page.Home)
     }
 };

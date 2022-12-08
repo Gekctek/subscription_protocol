@@ -1,14 +1,17 @@
-import { Accessor, Component, createEffect, createSignal, For, JSX, ResourceReturn, Show } from 'solid-js'
+import { Accessor, Component, createEffect, createSignal, For, JSX, Resource, ResourceReturn, Show } from 'solid-js'
+import { FeedItem } from '../api/FeedActor';
 
-type ItemStore = {
-    items: Accessor<any[]>;
-    getMore: () => boolean;
+export type SwiperStore = {
+    items: Resource<FeedItem[]>;
+    allItemsRetrieved: Accessor<boolean>;
+    triggerGetMore: () => void;
 };
 
 export type Props = {
-    store: ItemStore,
+    store: SwiperStore,
     renderSlide: (v: any, index: number) => JSX.Element,
-    endSlide: JSX.Element
+    endSlide: JSX.Element,
+    onChange: (activeItem: FeedItem | undefined) => void;
 }
 
 
@@ -20,11 +23,15 @@ const Swiper: Component<Props> = (props: Props) => {
     const [isDragging, setIsDragging] = createSignal(false);
 
     createEffect(() => {
-        if (!props.store.items()) {
+        let itemList = props.store.items();
+        if (!itemList) {
             return;
         }
-        if (index() + 1 >= props.store.items().length) {
-            let isMore = props.store.getMore(); // TODO
+        // If there are only X items left, get more items with an async call
+        // Then the `store.items()` will update
+        let shouldGetMore = itemList.length - index() < 3 && !props.store.allItemsRetrieved;
+        if (shouldGetMore) {
+            props.store.triggerGetMore();
         }
     })
 
@@ -79,24 +86,27 @@ const Swiper: Component<Props> = (props: Props) => {
     };
     const moveEnd = () => {
         let xOffset = xOffsetPercent();
+        let currentIndex = index();
         let newIndex = null;
         if (xOffset >= .25) {
-            newIndex = index() - 1;
+            newIndex = currentIndex - 1;
         } else if (xOffset < .25 && xOffset > -.25) {
             let momentum = xOffset - previousXOffsetPercent();
             if (momentum < -.01) {
-                newIndex = index() + 1;
+                newIndex = currentIndex + 1;
             } else if (momentum > .01) {
-                newIndex = index() - 1;
+                newIndex = currentIndex - 1;
             }
         } else if (xOffset < -.25) {
-            newIndex = index() + 1;
+            newIndex = currentIndex + 1;
         }
-        if (newIndex != null && newIndex >= 0 && newIndex <= props.store.items().length) {
+        let itemList = props.store.items() ?? [];
+        if (newIndex != null && newIndex >= 0 && newIndex <= itemList.length) {
             setIndex(newIndex);
+            props.onChange(itemList[newIndex]);
         }
-        setXOffsetPercent(0);
         setIsDragging(false);
+        setXOffsetPercent(0);
     };
 
 

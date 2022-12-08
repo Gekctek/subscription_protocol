@@ -8,6 +8,7 @@ let currentIdentity = authClient.getIdentity();
 
 export const [identity, setIdentity] = createSignal(currentIdentity.getPrincipal().isAnonymous() ? null : currentIdentity);
 
+export const [isRegistered, setIsRegistered] = createSignal(true);
 
 export async function login() {
     await authClient.login({

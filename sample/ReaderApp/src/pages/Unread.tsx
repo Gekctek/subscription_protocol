@@ -1,13 +1,15 @@
 import { Component, createMemo } from 'solid-js';
-import { unreadIndex, unreadItems, unreadResource, saveItemForLater } from '../Signals';
 import RefreshIcon from '@suid/icons-material/Refresh';
 import End from '../components/EndContent';
-import { Bookmark, RssFeed, BookmarkAdded } from '@suid/icons-material';
+import { Bookmark, RssFeed } from '@suid/icons-material';
 import NavWrapper from '../components/NavWrapper';
 import Item from '../components/Item';
-import { manageFeedButton, savedPageButton } from '../CommonButtons';
-import { FeedItem } from '../api/FeedActor';
-import Swiper from '../components/Swiper';
+import { manageFeedButton, savedPageButton } from '../components/CommonButtons';
+import { FeedActor, FeedItem } from '../api/FeedActor';
+import Swiper, { SwiperStore } from '../components/Swiper';
+import { allUnreadItemsRetrieved, savedItems, savedResource, setUnreadIndex, unreadIndex, unreadItems, unreadResource } from '../common/Feed';
+
+
 
 
 
@@ -15,7 +17,9 @@ const refreshButton = createMemo(() => {
     return {
         label: "Refresh",
         icon: <RefreshIcon />,
-        onClick: () => unreadResource.refetch()
+        onClick: () => unreadResource.refetch({
+            clearItems: true
+        })
     }
 });
 const saveItemButton = createMemo(() => {
@@ -46,7 +50,6 @@ const Unread: Component = () => {
             ];
         }
         let endOfFeedButtons = [
-            refreshButton(),
             savedPageButton()
         ];
         return endOfFeedButtons;
@@ -62,6 +65,7 @@ const Unread: Component = () => {
             ];
         }
         return [
+            refreshButton(),
             manageFeedButton()
         ];
     });
@@ -69,14 +73,33 @@ const Unread: Component = () => {
     const renderSlide = (item: FeedItem, index: number) => {
         return <Item value={item} />
     };
+    const swiperStore: SwiperStore = {
+        items: unreadItems,
+        allItemsRetrieved: allUnreadItemsRetrieved,
+        triggerGetMore: () => {
+            unreadResource.refetch({
+                clearItems: false
+            });
+        }
+    };
+
+    const onChange = (item: FeedItem | undefined) => {
+        if (!item) {
+            return;
+        }
+        FeedActor.markItemAsRead(item.hash)
+            // TODO
+            .catch((e) => console.log(`Failed to mark item '${item.hash}' as read: ` + e));
+    };
 
     return (
         <NavWrapper
             quickButtons={quickButtons()}
             speedDialButtons={speedDialButtons()}>
             <Swiper
-                resource={[unreadItems, unreadResource]}
+                store={swiperStore}
                 renderSlide={renderSlide}
+                onChange={onChange}
                 endSlide={<End
                     name={"Unread"}
                     icon={<RssFeed style={{ 'font-size': '200px' }} />} />}
@@ -86,3 +109,28 @@ const Unread: Component = () => {
 };
 
 export default Unread;
+
+
+
+export async function saveItemForLater() {
+    let unreadIndexValue = unreadIndex();
+
+    let unreadList = unreadItems();
+    let feedItemValue = unreadList ? unreadList[unreadIndexValue] : null;
+
+    if (feedItemValue) {
+        // Move from feed to saved
+        unreadResource.mutate(unreadList!.filter(u => u.hash != feedItemValue!.hash))
+        FeedActor.markItemAsRead(feedItemValue.hash);
+        let savedList = savedItems() ?? [];
+        savedResource.mutate(savedList.concat([feedItemValue]));
+        let response = await FeedActor.saveItemForLater(feedItemValue.hash);
+    }
+};
+export function previousUnread() {
+    let unreadIndexValue = unreadIndex();
+    if (unreadIndexValue < 1) {
+        return;
+    }
+    setUnreadIndex(unreadIndexValue - 1);
+};

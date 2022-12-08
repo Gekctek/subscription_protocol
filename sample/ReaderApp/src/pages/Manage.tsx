@@ -6,7 +6,7 @@ import { RSSBridgeActor, AddRequest, Subscription } from '../api/RSSBridgeActor'
 import { identity } from '../api/Identity';
 import { feedCanisterId } from '../api/CanisterIds';
 import { Identity } from '@dfinity/agent';
-import { savedPageButton, unreadPageButton } from '../CommonButtons';
+import { savedPageButton, unreadPageButton } from '../components/CommonButtons';
 
 
 
@@ -17,7 +17,7 @@ const [subId, setSubId] = createSignal("Feed1");
 
 async function getSubscription(b: boolean | undefined, info: { value: Subscription | null | undefined; refetching: boolean | unknown }): Promise<Subscription | null> {
     let getResult = await RSSBridgeActor.getSubscription(subId());
-    if('notFound' in getResult) {
+    if ('notFound' in getResult) {
         return null;
     }
     return getResult.ok;
@@ -25,14 +25,14 @@ async function getSubscription(b: boolean | undefined, info: { value: Subscripti
 
 const [subscription, subscriptionResource] = createResource(getSubscription);
 
-async function subscribe(){
+async function subscribe() {
     let feedUrlValue = feedUrl();
-    if(!feedUrlValue){
+    if (!feedUrlValue) {
         return;
     }
     let subscriptionValue = subscription();
-    if(!subscriptionValue) {
-        let request : AddRequest  = {
+    if (!subscriptionValue) {
+        let request: AddRequest = {
             id: subId(),
             callback: [feedCanisterId, "channelCallback"],
             channels: [feedUrlValue]
@@ -57,7 +57,7 @@ async function subscribe(){
 
 async function removeChannel(channelId: string) {
     let subscriptionValue = subscription();
-    if(!subscriptionValue) {
+    if (!subscriptionValue) {
         return;
     }
     subscriptionResource.mutate({
@@ -97,19 +97,19 @@ const Manage: Component = () => {
                         value={feedUrl()}
                         onChange={(e, v) => {
                             setFeedUrl(v);
-                        }}/>
+                        }} />
                     <Button onClick={() => subscribe()}>
                         Subscribe
                     </Button>
                 </div>
                 <List >
                     <For each={subscription()?.channels} >
-                        {(f) => 
+                        {(f) =>
                             <ListItem>
                                 <ListItemText primary={f} />
                                 <ListItemButton>
                                     <ListItemIcon>
-                                    <DeleteIcon onClick={() => removeChannel(f)} />
+                                        <DeleteIcon onClick={() => removeChannel(f)} />
                                     </ListItemIcon>
                                 </ListItemButton>
                             </ListItem>
