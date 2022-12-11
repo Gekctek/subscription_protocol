@@ -9,10 +9,10 @@ export const AuthorIDL = IDL.Variant({
 
 export const ContentIDL = IDL.Record({
   title: IDL.Text,
-  body: IDL.Record({
+  body: IDL.Opt(IDL.Record({
     format: IDL.Opt(IDL.Text),
     value: IDL.Text
-  }),
+  })),
   link: IDL.Text,
   authors: IDL.Vec(AuthorIDL),
   imageLink: IDL.Opt(IDL.Text),

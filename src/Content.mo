@@ -8,7 +8,7 @@ module {
 
     public type Content = {
         title : Text;
-        body : {
+        body : ?{
             format : ?Text;
             value : Text;
         };
