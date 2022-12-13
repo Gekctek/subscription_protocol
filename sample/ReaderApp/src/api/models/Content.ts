@@ -24,13 +24,14 @@ export const ContentIDL = IDL.Record({
 
 export type Author = { name: string } | {  identity: Principal } | {  handle: string };
 
+export type Body = {
+  format: [string] | [],
+  value: string
+};
 
 export type Content = {
   title: string,
-  body: {
-    format: [string] | [],
-    value: string
-  },
+  body: [Body] | [],
   link: string,
   authors: Author[],
   imageLink: [string] | [],

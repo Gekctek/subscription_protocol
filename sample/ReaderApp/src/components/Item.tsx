@@ -1,4 +1,5 @@
 import { Component, Match, Show, Switch } from 'solid-js';
+import { } from "@dfinity/candid"
 import { FeedItem } from '../api/FeedActor';
 
 type Props = { value: FeedItem };
@@ -10,7 +11,11 @@ function unEscape(htmlStr: string) {
     htmlStr = htmlStr.replace(/&#39;/g, "\'");
     htmlStr = htmlStr.replace(/&amp;/g, "&");
     return htmlStr;
-}
+};
+
+function toDateString(icTimestamp: number) {
+    return icTimestamp.toString(); // TODO
+};
 
 const Item: Component<Props> = (props: Props) => {
     let channel = {
@@ -42,7 +47,7 @@ const Item: Component<Props> = (props: Props) => {
                     }}>
                         {channel.name}
                     </a>
-                    <span>{props.value.content.date}</span>
+                    <span>{toDateString(props.value.content.date)}</span>
                 </div>
 
                 <Show when={props.value.content.imageLink.length > 0}>
@@ -52,9 +57,9 @@ const Item: Component<Props> = (props: Props) => {
                         <img src={props.value.content.imageLink[0]} alt="Content Image" />
                     </div>
                 </Show>
-                <Switch fallback={<div textContent={props.value.content.body.value} />}>
-                    <Match when={props.value.content.body.format[0] == "html"}>
-                        <div innerHTML={unEscape(props.value.content.body.value)} />
+                <Switch fallback={<div textContent={props.value.content.body[0]?.value} />}>
+                    <Match when={props.value.content.body[0]?.format[0] == "html"}>
+                        <div innerHTML={unEscape(props.value.content.body[0]!.value)} />
                     </Match>
                 </Switch>
             </div >

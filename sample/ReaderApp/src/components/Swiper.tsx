@@ -7,11 +7,13 @@ export type SwiperStore = {
     triggerGetMore: () => void;
 };
 
+export type FeedItemWithIndex = { index: number } & FeedItem;
+
 export type Props = {
     store: SwiperStore,
     renderSlide: (v: any, index: number) => JSX.Element,
     endSlide: JSX.Element,
-    onChange: (activeItem: FeedItem | undefined) => void;
+    onChange: (activeItem: FeedItemWithIndex | undefined, previousItem: FeedItemWithIndex | undefined) => void;
 }
 
 
@@ -87,7 +89,7 @@ const Swiper: Component<Props> = (props: Props) => {
     const moveEnd = () => {
         let xOffset = xOffsetPercent();
         let currentIndex = index();
-        let newIndex = null;
+        let newIndex;
         if (xOffset >= .25) {
             newIndex = currentIndex - 1;
         } else if (xOffset < .25 && xOffset > -.25) {
@@ -101,9 +103,17 @@ const Swiper: Component<Props> = (props: Props) => {
             newIndex = currentIndex + 1;
         }
         let itemList = props.store.items() ?? [];
-        if (newIndex != null && newIndex >= 0 && newIndex <= itemList.length) {
+        if (newIndex !== undefined && newIndex >= 0 && newIndex <= itemList.length) {
             setIndex(newIndex);
-            props.onChange(itemList[newIndex]);
+            let newItem = itemList[newIndex];
+            let newItemWithIndex = newItem === undefined
+                ? undefined
+                : { index: newIndex, ...newItem };
+            let currentItem = itemList[currentIndex];
+            let currentItemWithIndex = currentItem === undefined
+                ? undefined
+                : { index: currentIndex, ...currentItem };
+            props.onChange(newItemWithIndex, currentItemWithIndex);
         }
         setIsDragging(false);
         setXOffsetPercent(0);

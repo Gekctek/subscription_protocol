@@ -6,7 +6,7 @@ import NavWrapper from '../components/NavWrapper';
 import Item from '../components/Item';
 import { logoutButton, manageFeedButton, savedPageButton } from '../components/CommonButtons';
 import { FeedActor, FeedItem } from '../api/FeedActor';
-import Swiper, { SwiperStore } from '../components/Swiper';
+import Swiper, { FeedItemWithIndex, SwiperStore } from '../components/Swiper';
 import { allUnreadItemsRetrieved, savedItems, savedResource, setUnreadIndex, unreadIndex, unreadItems, unreadResource } from '../common/Feed';
 
 
@@ -85,13 +85,18 @@ const Unread: Component = () => {
         }
     };
 
-    const onChange = (item: FeedItem | undefined) => {
-        if (!item) {
+    const onChange = (newItem: FeedItemWithIndex | undefined, previousItem: FeedItemWithIndex | undefined) => {
+        if (!previousItem) {
             return;
         }
-        FeedActor.markItemAsRead(item.hash)
+
+        let forward = !newItem || newItem?.index > previousItem?.index;
+        if (!forward) {
+            return;
+        }
+        FeedActor.markItemAsRead(previousItem.hash)
             // TODO
-            .catch((e) => console.log(`Failed to mark item '${item.hash}' as read: ` + e));
+            .catch((e) => console.log(`Failed to mark item '${previousItem.hash}' as read: ` + e));
     };
 
     return (
