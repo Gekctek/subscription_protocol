@@ -36,5 +36,5 @@ export type Content = {
   authors: Author[],
   imageLink: [string] | [],
   language: [string] | [],
-  date: number,
+  date: bigint,
 };

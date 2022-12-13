@@ -44,9 +44,7 @@ actor RSSBridge {
             hash = Text.hash(request.id);
             key = request.id;
         };
-        for (c in Iter.fromArray(request.channels)) {
-            let _ = addFeed(c); // TODO
-        };
+        addNewFeeds(Iter.fromArray(request.channels));
         let newSubscription : SubscriptionInfo = {
             var callback = request.callback;
             var channels = TrieSet.fromArray(request.channels, Text.hash, Text.equal);
@@ -59,24 +57,6 @@ actor RSSBridge {
                 user.subscriptions := newSubscriptions;
                 #ok;
             };
-        };
-    };
-
-    type AddFeedResult = { #ok; #alreadyExists };
-
-    private func addFeed(url : Text) : AddFeedResult {
-        // TODO secure and test the feed
-        let key = {
-            hash = Text.hash(url);
-            key = url;
-        };
-        let (newFeeds, currentFeed) = Trie.put(feeds, key, Text.equal, { lastUpdated = null });
-        switch (currentFeed) {
-            case (null) {
-                feeds := newFeeds;
-                #ok;
-            };
-            case (?f) #alreadyExists;
         };
     };
 
@@ -102,15 +82,19 @@ actor RSSBridge {
             case (?channels) {
                 switch (channels) {
                     case (#add(a)) {
+                        addNewFeeds(Iter.fromArray(a));
                         let newChannels : TrieSet.Set<Text> = TrieSet.fromArray(a, Text.hash, Text.equal);
                         subscription.channels := TrieSet.union(subscription.channels, newChannels, Text.equal);
                     };
                     case (#remove(r)) {
+                        let channelsToRemove = Iter.fromArray(r);
                         for (channelToRemove in Iter.fromArray(r)) {
                             subscription.channels := TrieSet.delete(subscription.channels, channelToRemove, Text.hash(channelToRemove), Text.equal);
                         };
+                        removeOrphanedFeeds(channelsToRemove);
                     };
                     case (#set(s)) {
+                        addNewFeeds(Iter.fromArray(s));
                         subscription.channels := TrieSet.fromArray(s, Text.hash, Text.equal);
                     };
                 };
@@ -134,6 +118,50 @@ actor RSSBridge {
                 user.subscriptions := newSubscriptions;
                 #ok;
             };
+        };
+    };
+
+    private func addNewFeeds(urls : Iter.Iter<Text>) {
+
+        for (url in urls) {
+            let key = {
+                hash = Text.hash(url);
+                key = url;
+            };
+            let (newFeeds, currentFeed) = Trie.put(feeds, key, Text.equal, { lastUpdated = null });
+            if (currentFeed == null) {
+                // Only update if its new
+                feeds := newFeeds;
+            };
+        };
+    };
+
+    private func removeOrphanedFeeds(urls : Iter.Iter<Text>) {
+
+        // Find channels that are in use
+        var inUseChannels = TrieSet.empty<Text>();
+        for ((userId, userInfo) in Trie.iter(users)) {
+            for ((subId, sub) in Trie.iter(userInfo.subscriptions)) {
+                for ((channelId, _) in Trie.iter(sub.channels)) {
+                    inUseChannels := TrieSet.put(inUseChannels, channelId, Text.hash(channelId), Text.equal);
+                };
+            };
+        };
+
+        label f for (url in urls) {
+            let urlHash = Text.hash(url);
+            let urlInUse = TrieSet.mem(inUseChannels, url, urlHash, Text.equal);
+            if (urlInUse) {
+                // If url is still in use, skip
+                continue f;
+            };
+            // Remove unused url
+            let key = {
+                hash = urlHash;
+                key = url;
+            };
+            let (newFeeds, currentFeed) = Trie.remove(feeds, key, Text.equal);
+            feeds := newFeeds;
         };
     };
 

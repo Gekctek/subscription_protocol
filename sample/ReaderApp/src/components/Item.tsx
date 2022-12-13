@@ -13,8 +13,9 @@ function unEscape(htmlStr: string) {
     return htmlStr;
 };
 
-function toDateString(icTimestamp: number) {
-    return icTimestamp.toString(); // TODO
+function toDateString(icTimestamp: bigint) {
+    return new Date(Number(icTimestamp / 1_000_000n))
+        .toLocaleDateString('en-us', { weekday: "long", year: "numeric", month: "short", day: "numeric", hour: 'numeric', minute: 'numeric' }); // TODO
 };
 
 const Item: Component<Props> = (props: Props) => {
@@ -45,8 +46,14 @@ const Item: Component<Props> = (props: Props) => {
                     <a href='#' style={{
                         color: "#6f6f6f"
                     }}>
-                        {channel.name}
+                        Channel: {channel.name}
                     </a>
+                </div>
+                <div style={{
+                    "font-size": "13px",
+                    color: "rgb(152, 144, 130)",
+                    margin: "0 0 8px 0"
+                }}>
                     <span>{toDateString(props.value.content.date)}</span>
                 </div>
 
@@ -57,7 +64,7 @@ const Item: Component<Props> = (props: Props) => {
                         <img src={props.value.content.imageLink[0]} alt="Content Image" />
                     </div>
                 </Show>
-                <Switch fallback={<div textContent={props.value.content.body[0]?.value} />}>
+                <Switch>
                     <Match when={props.value.content.body[0]?.format[0] == "html"}>
                         <div innerHTML={unEscape(props.value.content.body[0]!.value)} />
                     </Match>
