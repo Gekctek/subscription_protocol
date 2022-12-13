@@ -31,7 +31,8 @@ const Swiper: Component<Props> = (props: Props) => {
         }
         // If there are only X items left, get more items with an async call
         // Then the `store.items()` will update
-        let shouldGetMore = itemList.length - index() < 3 && !props.store.allItemsRetrieved;
+        let itemsRemaining = itemList.length - index();
+        let shouldGetMore = itemsRemaining < 3 && !props.store.allItemsRetrieved();
         if (shouldGetMore) {
             props.store.triggerGetMore();
         }
@@ -117,6 +118,7 @@ const Swiper: Component<Props> = (props: Props) => {
         }
         setIsDragging(false);
         setXOffsetPercent(0);
+        setPreviousXOffsetPercent(0);
     };
 
 

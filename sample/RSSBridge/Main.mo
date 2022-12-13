@@ -27,7 +27,7 @@ actor RSSBridge {
     };
 
     type Feed = {
-        lastUpdated : ?Time.Time;
+        var lastUpdated : ?Time.Time;
     };
 
     private stable var feeds : Trie.Trie<Text, Feed> = Trie.empty();
@@ -128,10 +128,14 @@ actor RSSBridge {
                 hash = Text.hash(url);
                 key = url;
             };
-            let (newFeeds, currentFeed) = Trie.put(feeds, key, Text.equal, { lastUpdated = null });
-            if (currentFeed == null) {
-                // Only update if its new
-                feeds := newFeeds;
+            let newFeed : Feed = { var lastUpdated = null };
+            let (newFeeds, currentFeed) = Trie.put(feeds, key, Text.equal, newFeed);
+            switch (currentFeed) {
+                case (null) {
+                    // Only update if its new
+                    feeds := newFeeds;
+                };
+                case (_) {};
             };
         };
     };
@@ -206,7 +210,21 @@ actor RSSBridge {
 
     public shared func push(channelId : Text, content : Content.Content) : async () {
         // TODO secure
-
+        let feedKey = {
+            hash = Text.hash(channelId);
+            key = channelId;
+        };
+        let feed = switch (Trie.get(feeds, feedKey, Text.equal)) {
+            case (null) return; //TODO?
+            case (?f) f;
+        };
+        let updateDate = switch (feed.lastUpdated) {
+            case (null) true;
+            case (?d) d < content.date;
+        };
+        if (updateDate) {
+            feed.lastUpdated := ?content.date;
+        };
         label f for ((userId, user) in Trie.iter(users)) {
             for ((subId, sub) in Trie.iter(user.subscriptions)) {
                 let subHasChannel = TrieSet.mem(sub.channels, channelId, Text.hash(channelId), Text.equal);

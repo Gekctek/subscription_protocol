@@ -43,11 +43,15 @@ const Item: Component<Props> = (props: Props) => {
                     color: "rgb(152, 144, 130)",
                     margin: "0 0 8px 0"
                 }}>
-                    <a href='#' style={{
-                        color: "#6f6f6f"
-                    }}>
-                        Channel: {channel.name}
-                    </a>
+                    Channel: {channel.name}
+                    {/* <a
+                        href={channel.}
+                        target="_blank"
+                        style={{
+                            color: "#6f6f6f"
+                        }}>
+                        TODO link to channel home page
+                    </a> */}
                 </div>
                 <div style={{
                     "font-size": "13px",

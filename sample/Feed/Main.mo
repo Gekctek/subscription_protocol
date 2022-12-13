@@ -60,18 +60,6 @@ actor FeedReader {
         saved : [ItemHash];
     };
 
-    public func getUsers() : async [UserDataInfo] {
-        return Trie.toArray<Principal, UserData, UserDataInfo>(
-            userDataMap,
-            func(k, v) {
-                {
-                    unread = List.toArray(v.unread);
-                    saved = List.toArray(v.saved);
-                };
-            },
-        );
-    };
-
     public shared ({ caller }) func channelCallback(update : Subscription.CallbackArgs) : async Subscription.CallbackResult {
 
         switch (update.message) {
@@ -153,6 +141,7 @@ actor FeedReader {
                 i != hash;
             },
         );
+        // TODO cleanup orphaned items?
         #ok();
     };
 
@@ -233,41 +222,41 @@ actor FeedReader {
             case (#unread) userData.unread;
             case (#saved) userData.saved;
         };
-        Iter.iterate<ItemHash>(
-            Iter.fromList(items),
-            func(itemHash, i) {
-                switch (skipTillFoundHash) {
-                    case (null) {
-                        // Already found hash or no hash
-                        let key = { hash = itemHash; key = itemHash };
-                        switch (Trie.get(itemMap, key, Nat32.equal)) {
-                            case (?item) {
-                                resultItems.add({ item with hash = itemHash });
+        label f for (itemHash in Iter.fromList(items)) {
+            switch (skipTillFoundHash) {
+                case (null) {
+                    // Already found hash or no hash
+                    let key = { hash = itemHash; key = itemHash };
+                    switch (Trie.get(itemMap, key, Nat32.equal)) {
+                        case (?item) {
+                            resultItems.add({ item with hash = itemHash });
+                            if (resultItems.size() >= limit) {
+                                break f;
                             };
-                            case (null) {
-                                // Skip adding item. Cant find it
-                                let items = switch (t) {
-                                    case (#unread) {
-                                        userData.unread := List.filter<ItemHash>(userData.unread, func(i) { i == itemHash });
-                                    };
-                                    case (#saved) {
-                                        userData.saved := List.filter<ItemHash>(userData.saved, func(i) { i == itemHash });
-                                    };
+                        };
+                        case (null) {
+                            // Skip adding item. Cant find it
+                            let items = switch (t) {
+                                case (#unread) {
+                                    userData.unread := List.filter<ItemHash>(userData.unread, func(i) { i == itemHash });
+                                };
+                                case (#saved) {
+                                    userData.saved := List.filter<ItemHash>(userData.saved, func(i) { i == itemHash });
                                 };
                             };
                         };
                     };
-                    case (?h) {
-                        if (itemHash == h) {
-                            // Set to null to allow search
-                            // but still exclude this item
-                            skipTillFoundHash := null;
-                        };
-                        // Don't add to result because this item is excluded
-                    };
                 };
-            },
-        );
+                case (?h) {
+                    if (itemHash == h) {
+                        // Set to null to allow search
+                        // but still exclude this item
+                        skipTillFoundHash := null;
+                    };
+                    // Don't add to result because this item is excluded
+                };
+            };
+        };
         return #ok(resultItems.toArray());
     };
 

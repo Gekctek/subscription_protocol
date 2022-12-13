@@ -13,25 +13,27 @@ import { allUnreadItemsRetrieved, savedItems, savedResource, setUnreadIndex, unr
 
 
 
-const refreshButton = createMemo(() => {
-    return {
-        label: "Refresh",
-        icon: <RefreshIcon />,
-        onClick: () => unreadResource.refetch({
-            clearItems: true
-        })
-    }
-});
-const saveItemButton = createMemo(() => {
-    return {
-        label: "Save",
-        icon: <Bookmark />,
-        onClick: () => saveItemForLater()
-    };
-});
 
 
 const Unread: Component = () => {
+
+    const refreshButton = createMemo(() => {
+        return {
+            label: "Refresh",
+            icon: <RefreshIcon />,
+            onClick: () => unreadResource.refetch({
+                clearItems: true
+            })
+        }
+    });
+    const saveItemButton = createMemo(() => {
+        return {
+            label: "Save",
+            icon: <Bookmark />,
+            onClick: () => saveItemForLater()
+        };
+    });
+
     const currentItem = createMemo(() => {
         let unreadItemsValue = unreadItems() ?? [];
         let unreadIndexValue = unreadIndex();
@@ -79,9 +81,12 @@ const Unread: Component = () => {
         items: unreadItems,
         allItemsRetrieved: allUnreadItemsRetrieved,
         triggerGetMore: () => {
-            unreadResource.refetch({
-                clearItems: false
-            });
+            // Refetch if not already getting more
+            if (!unreadItems.loading) {
+                unreadResource.refetch({
+                    clearItems: false
+                });
+            }
         }
     };
 
