@@ -24,11 +24,12 @@ const Item: Component<Props> = (props: Props) => {
         name: props.value.channelId
     }; // TODO lookup channel
     return (
-        <div style={{ 'min-height': '100%' }}>
+        <div style={{ 'height': '100%' }}>
             <div style={{
                 height: "100%",
                 "text-align": "start",
-                padding: "20px"
+                padding: "20px",
+                "box-sizing": 'border-box'
             }}>
                 <div style={{
                     "font-size": "24px",

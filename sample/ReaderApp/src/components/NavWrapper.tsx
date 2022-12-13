@@ -44,13 +44,15 @@ const NavWrapper: Component<Props> = (props: Props) => {
                 display: 'flex',
                 "justify-content": 'space-around',
                 "align-content": 'center',
-                "align-items": "flex-end"
+                "align-items": "flex-end",
+                "pointer-events": "none"
             }}>
                 <For each={paddedButtons}>
                     {(b) =>
                         <ButtonWrapper>
                             <Fab onClick={b?.onClick} style={{
-                                visibility: b == null ? "hidden" : "inherit"
+                                visibility: b == null ? "hidden" : "inherit",
+                                "pointer-events": "all"
                             }}>
                                 {b?.icon}
                             </Fab>

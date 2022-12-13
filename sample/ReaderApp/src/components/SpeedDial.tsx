@@ -9,10 +9,10 @@ const [menuAnchor, setMenuAnchor] = createSignal<null | HTMLElement>(null);
 const isOpen = () => Boolean(menuAnchor());
 const onClose = () => setMenuAnchor(null);
 
-function toggleMenu(el: HTMLButtonElement){
-    if(!!menuAnchor()){
+function toggleMenu(el: HTMLButtonElement) {
+    if (!!menuAnchor()) {
         setMenuAnchor(null)
-    } else{
+    } else {
         setMenuAnchor(el)
     }
 }
@@ -41,16 +41,17 @@ const SpeedDial: Component<Props> = (props: Props) => {
                 "flex-flow": "column"
             }}>
                 <For each={props.options}>
-                    {(o, i) => 
+                    {(o, i) =>
                         <div style={{
-                            margin: "0 0 20px 0"
+                            margin: "0 0 20px 0",
+                            "pointer-events": "all"
                         }}>
-                            <SpeedDialItem 
+                            <SpeedDialItem
                                 icon={o.icon}
                                 index={i()}
                                 label={o.label}
                                 onClick={() => wrapOnClick(o.onClick)}
-                                visible={isOpen()}/>
+                                visible={isOpen()} />
                         </div>
                     }
                 </For>
@@ -59,7 +60,7 @@ const SpeedDial: Component<Props> = (props: Props) => {
                     disabled={!anyOptions}
                     onClick={(e) => toggleMenu(e)} />
             </div>
-            
+
         </>
     );
 };
