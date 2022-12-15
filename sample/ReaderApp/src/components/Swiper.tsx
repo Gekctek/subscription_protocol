@@ -4,6 +4,7 @@ import { FeedItem } from '../api/FeedActor';
 import BackIcon from '@suid/icons-material/ArrowBackIosNew';
 import ForwardIcon from '@suid/icons-material/ArrowForwardIos';
 import { setUnreadIndex, unreadIndex, unreadItems } from '../common/Feed';
+import { onMount } from "solid-js";
 
 export type SwiperStore = {
     items: Resource<FeedItem[]>;
@@ -20,11 +21,27 @@ export type Props = {
     onChange: (activeItem: FeedItemWithIndex | undefined, previousItem: FeedItemWithIndex | undefined) => void;
 }
 
+const detectIfLargeScreen = () => {
+    return window.innerWidth >= 1000;
+};
+
 const Swiper: Component<Props> = (props: Props) => {
     const [cursorXStart, setCursorXStart] = createSignal<number>(0);
     const [previousXOffsetPercent, setPreviousXOffsetPercent] = createSignal<number>(0);
     const [xOffsetPercent, setXOffsetPercent] = createSignal<number>(0);
     const [isDragging, setIsDragging] = createSignal(false);
+    const [isLargeScreen, setIsLargeScreen] = createSignal(detectIfLargeScreen())
+
+    const onResize = () => {
+        setIsLargeScreen(detectIfLargeScreen());
+    };
+
+    createEffect(() => {
+        window.addEventListener('resize', onResize);
+        return () => {
+            window.removeEventListener('resize', onResize);
+        };
+    })
 
     createEffect(() => {
         let itemList = props.store.items();
@@ -142,20 +159,22 @@ const Swiper: Component<Props> = (props: Props) => {
     };
     return (
         <div class="swiper">
-            <div class='nav-button nav-button-back'>
-                <Show when={unreadIndex() > 0}>
-                    <Fab onClick={() => setIndexSafe(unreadIndex() - 1, unreadIndex())}>
-                        <BackIcon />
-                    </Fab>
-                </Show>
-            </div>
-            <div class='nav-button nav-button-next'>
-                <Show when={unreadIndex() < (unreadItems()?.length ?? 0)}>
-                    <Fab onClick={() => setIndexSafe(unreadIndex() + 1, unreadIndex())}>
-                        <ForwardIcon />
-                    </Fab>
-                </Show>
-            </div>
+            <Show when={isLargeScreen()}>
+                <div class='nav-button nav-button-back'>
+                    <Show when={unreadIndex() > 0}>
+                        <Fab onClick={() => setIndexSafe(unreadIndex() - 1, unreadIndex())}>
+                            <BackIcon />
+                        </Fab>
+                    </Show>
+                </div>
+                <div class='nav-button nav-button-next'>
+                    <Show when={unreadIndex() < (unreadItems()?.length ?? 0)}>
+                        <Fab onClick={() => setIndexSafe(unreadIndex() + 1, unreadIndex())}>
+                            <ForwardIcon />
+                        </Fab>
+                    </Show>
+                </div>
+            </Show>
             <div class="swiper-box">
                 <div
                     class="swiper-content"
