@@ -1,11 +1,12 @@
 import { Component, createMemo, createResource, createSignal, For } from 'solid-js';
-import { Button, List, ListItem, ListItemButton, ListItemIcon, ListItemText, TextField } from "@suid/material"
+import { Avatar, Button, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, TextField } from "@suid/material"
 import DeleteIcon from "@suid/icons-material/Delete"
 import NavWrapper from '../components/NavWrapper';
 import { RSSBridgeActor, AddRequest, Subscription } from '../api/RSSBridgeActor';
 import { feedCanisterId } from '../api/CanisterIds';
 import { Identity } from '@dfinity/agent';
 import { savedPageButton, unreadPageButton } from '../components/CommonButtons';
+import { RssFeed } from '@suid/icons-material';
 
 
 
@@ -88,29 +89,39 @@ const Manage: Component = () => {
         <NavWrapper quickButtons={quickButtons()} speedDialButtons={speedDialButtons()}>
             <div>
                 <div style={{
-
+                    display: 'flex',
+                    'justify-content': 'center',
+                    margin: "40px 20px"
                 }}>
                     <TextField
                         label="RSS Feed Url"
-                        variant='filled'
+                        variant='outlined'
+                        fullWidth={true}
                         value={feedUrl()}
                         onChange={(e, v) => {
                             setFeedUrl(v);
                         }} />
-                    <Button onClick={() => subscribe()}>
+                    <Button
+                        style={{
+                            "margin-left": "10px"
+                        }}
+                        variant="contained"
+                        onClick={() => subscribe()} disabled={!feedUrl()}>
                         Subscribe
                     </Button>
                 </div>
                 <List >
                     <For each={subscription()?.channels} >
                         {(f) =>
-                            <ListItem>
+                            <ListItem secondaryAction={<IconButton>
+                                <DeleteIcon onClick={() => removeChannel(f)} />
+                            </IconButton>}>
+                                <ListItemAvatar >
+                                    <Avatar variant='rounded'>
+                                        <RssFeed />
+                                    </Avatar>
+                                </ListItemAvatar>
                                 <ListItemText primary={f} />
-                                <ListItemButton>
-                                    <ListItemIcon>
-                                        <DeleteIcon onClick={() => removeChannel(f)} />
-                                    </ListItemIcon>
-                                </ListItemButton>
                             </ListItem>
                         }
                     </For>

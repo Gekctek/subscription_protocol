@@ -1,6 +1,7 @@
 import { Component } from "solid-js";
 import CloseIcon from "@suid/icons-material/Close";
 import { Fab } from "@suid/material";
+import { style } from "solid-js/web";
 
 type Props = {
   isOpen: boolean,
@@ -12,13 +13,15 @@ const FabSpinner: Component<Props> = (props: Props) => {
 
   return <Fab
     onClick={(e) => props.onClick(e.currentTarget)}
-    disabled={props.disabled}>
+    disabled={props.disabled}
+    style={{
+      "pointer-events": "all"
+    }}>
 
     <div style={{
       transition: "all 250ms",
       transform: "rotate(" + (props.isOpen ? 0 : "-45deg") + ")",
-      display: "flex",
-      "pointer-events": "all"
+      display: "flex"
     }}>
       <CloseIcon />
     </div>

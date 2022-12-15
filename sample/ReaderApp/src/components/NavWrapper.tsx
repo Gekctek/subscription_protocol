@@ -24,14 +24,20 @@ const NavWrapper: Component<Props> = (props: Props) => {
     while (paddedButtons.length <= 3) {
         paddedButtons.unshift(null); // Pad buttons to always have them in same place
     }
+    const floatingActionButton = (b: ButtonInfo | null) => {
+        return <Fab onClick={b?.onClick} style={{
+            visibility: b == null ? "hidden" : "inherit",
+            "pointer-events": "all"
+        }}>
+            {b?.icon}
+        </Fab>
+    };
     return (
         <div style={{
-            height: '100%',
+            height: '100%'
         }}>
             <div style={{
                 height: '100%',
-                "overflow-y": 'auto',
-                "overflow-x": 'hidden',
                 'margin-bottom': '76px'
             }}>
                 {props.children}
@@ -50,12 +56,7 @@ const NavWrapper: Component<Props> = (props: Props) => {
                 <For each={paddedButtons}>
                     {(b) =>
                         <ButtonWrapper>
-                            <Fab onClick={b?.onClick} style={{
-                                visibility: b == null ? "hidden" : "inherit",
-                                "pointer-events": "all"
-                            }}>
-                                {b?.icon}
-                            </Fab>
+                            {floatingActionButton(b)}
                         </ButtonWrapper>
                     }
                 </For>

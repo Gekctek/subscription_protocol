@@ -8,7 +8,13 @@ import SavedPage from './pages/Saved';
 import { Route, Routes, useNavigate } from '@solidjs/router';
 import { Page } from './common/Page';
 import { identity } from './common/Identity';
+import { createTheme, ThemeProvider } from '@suid/material';
 
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 const App: Component = () => {
   if (!identity()) {
@@ -16,14 +22,14 @@ const App: Component = () => {
     navigate(Page.Login);
   }
   return (
-    <>
+    <ThemeProvider theme={darkTheme}>
       <Routes>
         <Route path={Page.Home} component={UnreadPage} />
         <Route path={Page.Login} component={LoginPage} />
         <Route path={Page.Manage} component={ManagePage} />
         <Route path={Page.Saved} component={SavedPage} />
       </Routes>
-    </>
+    </ThemeProvider>
   );
 };
 

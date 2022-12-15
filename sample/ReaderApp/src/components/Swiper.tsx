@@ -1,5 +1,9 @@
+import { Fab } from '@suid/material';
 import { Accessor, Component, createEffect, createSignal, For, JSX, Resource, ResourceReturn, Show } from 'solid-js'
 import { FeedItem } from '../api/FeedActor';
+import BackIcon from '@suid/icons-material/ArrowBackIosNew';
+import ForwardIcon from '@suid/icons-material/ArrowForwardIos';
+import { setUnreadIndex, unreadIndex, unreadItems } from '../common/Feed';
 
 export type SwiperStore = {
     items: Resource<FeedItem[]>;
@@ -16,12 +20,10 @@ export type Props = {
     onChange: (activeItem: FeedItemWithIndex | undefined, previousItem: FeedItemWithIndex | undefined) => void;
 }
 
-
 const Swiper: Component<Props> = (props: Props) => {
     const [cursorXStart, setCursorXStart] = createSignal<number>(0);
     const [previousXOffsetPercent, setPreviousXOffsetPercent] = createSignal<number>(0);
     const [xOffsetPercent, setXOffsetPercent] = createSignal<number>(0);
-    const [index, setIndex] = createSignal(0);
     const [isDragging, setIsDragging] = createSignal(false);
 
     createEffect(() => {
@@ -31,7 +33,7 @@ const Swiper: Component<Props> = (props: Props) => {
         }
         // If there are only X items left, get more items with an async call
         // Then the `store.items()` will update
-        let itemsRemaining = itemList.length - index();
+        let itemsRemaining = itemList.length - unreadIndex();
         let shouldGetMore = itemsRemaining < 3 && !props.store.allItemsRetrieved();
         if (shouldGetMore) {
             props.store.triggerGetMore();
@@ -89,7 +91,7 @@ const Swiper: Component<Props> = (props: Props) => {
     };
     const moveEnd = () => {
         let xOffset = xOffsetPercent();
-        let currentIndex = index();
+        let currentIndex = unreadIndex();
         let newIndex;
         if (xOffset >= .25) {
             newIndex = currentIndex - 1;
@@ -103,9 +105,17 @@ const Swiper: Component<Props> = (props: Props) => {
         } else if (xOffset < -.25) {
             newIndex = currentIndex + 1;
         }
+        setIndexSafe(newIndex, currentIndex);
+
+        setIsDragging(false);
+        setXOffsetPercent(0);
+        setPreviousXOffsetPercent(0);
+    };
+
+    const setIndexSafe = (newIndex: number | undefined, currentIndex: number) => {
         let itemList = props.store.items() ?? [];
         if (newIndex !== undefined && newIndex >= 0 && newIndex <= itemList.length) {
-            setIndex(newIndex);
+            setUnreadIndex(newIndex);
             let newItem = itemList[newIndex];
             let newItemWithIndex = newItem === undefined
                 ? undefined
@@ -116,14 +126,11 @@ const Swiper: Component<Props> = (props: Props) => {
                 : { index: currentIndex, ...currentItem };
             props.onChange(newItemWithIndex, currentItemWithIndex);
         }
-        setIsDragging(false);
-        setXOffsetPercent(0);
-        setPreviousXOffsetPercent(0);
-    };
+    }
 
 
     const translatePercentage = () => {
-        let translate = ((index()) * -100) + (xOffsetPercent() * 100);
+        let translate = ((unreadIndex()) * -100) + (xOffsetPercent() * 100);
         if (translate > 0) {
             return 0;
         }
@@ -134,24 +141,42 @@ const Swiper: Component<Props> = (props: Props) => {
         return translate;
     };
     return (
-        <div
-            class="swiper"
-            style={{
-                transform: `translateX(${translatePercentage()}%)`,
-                "transition-duration": isDragging() ? "0ms" : "300ms"
-            }}
-            onTouchStart={onStart}
-            onTouchMove={onMove}
-            onTouchEnd={onEnd}>
-            <For each={props.store.items()}>
-                {(item, index) => (
+        <div class="swiper">
+            <div class='nav-button nav-button-back'>
+                <Show when={unreadIndex() > 0}>
+                    <Fab onClick={() => setIndexSafe(unreadIndex() - 1, unreadIndex())}>
+                        <BackIcon />
+                    </Fab>
+                </Show>
+            </div>
+            <div class='nav-button nav-button-next'>
+                <Show when={unreadIndex() < (unreadItems()?.length ?? 0)}>
+                    <Fab onClick={() => setIndexSafe(unreadIndex() + 1, unreadIndex())}>
+                        <ForwardIcon />
+                    </Fab>
+                </Show>
+            </div>
+            <div class="swiper-box">
+                <div
+                    class="swiper-content"
+                    style={{
+                        transform: `translateX(${translatePercentage()}%)`,
+                        "transition-duration": isDragging() ? "0ms" : "300ms"
+                    }}
+                    onTouchStart={onStart}
+                    onTouchMove={onMove}
+                    onTouchEnd={onEnd}>
+                    <For each={props.store.items()}>
+                        {(item, index) => (
+                            <div class="swiper-slide">
+                                {props.renderSlide(item, unreadIndex())}
+                            </div>
+                        )}
+                    </For>
                     <div class="swiper-slide">
-                        {props.renderSlide(item, index())}
+                        {props.endSlide}
                     </div>
-                )}
-            </For>
-            <div class="swiper-slide">
-                {props.endSlide}
+                </div>
             </div>
         </div>
     );

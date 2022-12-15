@@ -23,7 +23,7 @@ const EndContent: Component<Props> = (props: Props) => {
             <div style={{
                 "font-size": '50px'
             }}>
-                0 {props.name}
+                {props.name}
             </div>
         </div>
     );

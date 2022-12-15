@@ -1,4 +1,4 @@
-import { Component, createMemo } from 'solid-js';
+import { Component, createMemo, createSignal, Match, Show, Suspense, Switch } from 'solid-js';
 import RefreshIcon from '@suid/icons-material/Refresh';
 import End from '../components/EndContent';
 import { Bookmark, RssFeed } from '@suid/icons-material';
@@ -8,10 +8,11 @@ import { logoutButton, manageFeedButton, savedPageButton } from '../components/C
 import { FeedActor, FeedItem } from '../api/FeedActor';
 import Swiper, { FeedItemWithIndex, SwiperStore } from '../components/Swiper';
 import { allUnreadItemsRetrieved, savedItems, savedResource, setUnreadIndex, unreadIndex, unreadItems, unreadResource } from '../common/Feed';
+import { CircularProgress } from '@suid/material';
 
 
 
-
+const [triggered, setTriggered] = createSignal(false);
 
 
 
@@ -82,10 +83,20 @@ const Unread: Component = () => {
         allItemsRetrieved: allUnreadItemsRetrieved,
         triggerGetMore: () => {
             // Refetch if not already getting more
-            if (!unreadItems.loading) {
-                unreadResource.refetch({
+            if (!triggered()) {
+                setTriggered(true);
+                let result = unreadResource.refetch({
                     clearItems: false
-                });
+                }) as Promise<FeedItem[]>;
+                if (!!result) {
+                    result
+                        .then(() => {
+                            setTriggered(false);
+                        });
+                }
+                else {
+                    setTriggered(false);
+                }
             }
         }
     };
@@ -103,20 +114,32 @@ const Unread: Component = () => {
             // TODO
             .catch((e) => console.log(`Failed to mark item '${previousItem.hash}' as read: ` + e));
     };
-
+    let loadingComponent = (
+        <div style={{
+            width: "100%",
+            display: "flex",
+            height: "100%",
+            "justify-content": "center",
+            "align-items": "center"
+        }}>
+            <CircularProgress size={100} />
+        </div>
+    );
     return (
-        <NavWrapper
-            quickButtons={quickButtons()}
-            speedDialButtons={speedDialButtons()}>
-            <Swiper
-                store={swiperStore}
-                renderSlide={renderSlide}
-                onChange={onChange}
-                endSlide={<End
-                    name={"Unread"}
-                    icon={<RssFeed style={{ 'font-size': '200px' }} />} />}
-            />
-        </NavWrapper>
+        <Show when={!!unreadItems()} fallback={loadingComponent}>
+            <NavWrapper
+                quickButtons={quickButtons()}
+                speedDialButtons={speedDialButtons()}>
+                <Swiper
+                    store={swiperStore}
+                    renderSlide={renderSlide}
+                    onChange={onChange}
+                    endSlide={<End
+                        name={"No more unread"}
+                        icon={<RssFeed style={{ 'font-size': '200px' }} />} />}
+                />
+            </NavWrapper>
+        </Show>
     );
 };
 

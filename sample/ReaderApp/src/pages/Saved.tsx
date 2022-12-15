@@ -7,7 +7,7 @@ import ArticleIcon from '@suid/icons-material/Article';
 import End from '../components/EndContent';
 import NavWrapper from '../components/NavWrapper';
 import Item from '../components/Item';
-import { logoutButton, unreadPageButton } from '../components/CommonButtons';
+import { logoutButton, manageFeedButton, unreadPageButton } from '../components/CommonButtons';
 import { FeedActor, FeedItem } from '../api/FeedActor';
 import { savedItems, savedResource } from '../common/Feed';
 
@@ -41,6 +41,13 @@ const Saved: Component = () => {
             onClick: () => savedResource.refetch()
         }
     });
+    const speedDialButtons = () => {
+        return [
+            refreshButton(),
+            manageFeedButton(),
+            logoutButton()
+        ]
+    }
     return (
         <Switch>
             <Match when={!!selectedSavedItem()}>
@@ -49,17 +56,16 @@ const Saved: Component = () => {
                         backToSavedButton(),
                         deleteSavedButton()
                     ]}
-                    speedDialButtons={[logoutButton()]}>
+                    speedDialButtons={speedDialButtons()}>
                     <Item value={selectedSavedItem()!} />
                 </NavWrapper>
             </Match>
             <Match when={(savedItems()?.length ?? 0) > 0}>
                 <NavWrapper
                     quickButtons={[
-                        refreshButton(),
                         unreadPageButton()
                     ]}
-                    speedDialButtons={[]}>
+                    speedDialButtons={speedDialButtons()}>
                     <>
                         <h1>Saved:</h1>
                         <List>
@@ -101,12 +107,11 @@ const Saved: Component = () => {
             <Match when={(savedItems()?.length ?? 0) < 1}>
                 <NavWrapper
                     quickButtons={[
-                        refreshButton(),
                         unreadPageButton()
                     ]}
-                    speedDialButtons={[]}>
+                    speedDialButtons={speedDialButtons()}>
                     <End
-                        name='Saved'
+                        name='No more saved'
                         icon={
                             <ArticleIcon style={{
                                 'font-size': '200px'
