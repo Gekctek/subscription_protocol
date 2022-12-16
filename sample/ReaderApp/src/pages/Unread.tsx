@@ -14,7 +14,7 @@ import { CircularProgress } from '@suid/material';
 
 const [triggered, setTriggered] = createSignal(false);
 
-
+let readItemsCache = new Set<number>();
 
 const Unread: Component = () => {
 
@@ -110,9 +110,13 @@ const Unread: Component = () => {
         if (!forward) {
             return;
         }
-        FeedActor.markItemAsRead(previousItem.hash)
-            // TODO
-            .catch((e) => console.log(`Failed to mark item '${previousItem.hash}' as read: ` + e));
+        if (!readItemsCache.has(previousItem.hash)) {
+            // Optimization, only mark as read once
+            readItemsCache.add(previousItem.hash);
+            FeedActor.markItemAsRead(previousItem.hash)
+                // TODO
+                .catch((e) => console.log(`Failed to mark item '${previousItem.hash}' as read: ` + e));
+        }
     };
     let loadingComponent = (
         <div style={{

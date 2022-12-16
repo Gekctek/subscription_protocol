@@ -26,6 +26,7 @@ const detectIfLargeScreen = () => {
 
 const Swiper: Component<Props> = (props: Props) => {
     const [cursorXStart, setCursorXStart] = createSignal<number>(0);
+    const [cursorYStart, setCursorYStart] = createSignal<number>(0);
     const [previousXOffsetPercent, setPreviousXOffsetPercent] = createSignal<number>(0);
     const [xOffsetPercent, setXOffsetPercent] = createSignal<number>(0);
     const [isDragging, setIsDragging] = createSignal(false);
@@ -75,32 +76,27 @@ const Swiper: Component<Props> = (props: Props) => {
 
 
     const moveStart = (e: TouchEvent) => {
-        let cursorX: number = 0;
-        if (e.touches) {
-            if (!e.touches[0]) {
-                throw new Error('touch is not find')
-            }
-            cursorX = e.touches[0].clientX
-        }
+        let cursorX: number = e.touches[0].clientX;
+        let cursorY: number = e.touches[0].clientY;
 
         setCursorXStart(parseFloat(cursorX.toFixed(2)));
+        setCursorYStart(parseFloat(cursorY.toFixed(2)));
     };
     const move = (e: TouchEvent) => {
 
-        let cursorX: number = 0
-        if (e.touches) {
-            if (!e.touches[0]) {
-                throw new Error('touch is not find')
-            }
-            cursorX = e.touches[0].clientX;
-        }
+        let cursorX: number = e.touches[0].clientX;
+        let cursorY: number = e.touches[0].clientY;
 
         cursorX = parseFloat(cursorX.toFixed(2));
         const tX: number = parseFloat((cursorX - cursorXStart()).toFixed(2));
 
+        cursorY = parseFloat(cursorY.toFixed(2));
+        const tY: number = parseFloat((cursorY - cursorYStart()).toFixed(2));
+
         if (!isDragging()) {
             // If not dragging, don't drag until it reaches a certain point
-            if (Math.abs(tX) < 25) {
+            // Or if scrolling
+            if (Math.abs(tX) < 10 || Math.abs(tX) < (Math.abs(tY) * 1.5)) {
                 return;
             }
             setIsDragging(true);
@@ -113,24 +109,31 @@ const Swiper: Component<Props> = (props: Props) => {
     const moveEnd = () => {
         let xOffset = xOffsetPercent();
         let currentIndex = unreadIndex();
+
+        const minOffsetPercent = .25;
         let newIndex;
-        if (xOffset >= .25) {
+        if (xOffset >= minOffsetPercent) {
+            // If positive, move back
             newIndex = currentIndex - 1;
-        } else if (xOffset < .25 && xOffset > -.25) {
+        } else if (xOffset < minOffsetPercent && xOffset > -minOffsetPercent) {
+            // If movement too small, dont change index
+            // Unless there is a fast flick
             let momentum = xOffset - previousXOffsetPercent();
             if (momentum < -.01) {
                 newIndex = currentIndex + 1;
             } else if (momentum > .01) {
                 newIndex = currentIndex - 1;
             }
-        } else if (xOffset < -.25) {
+        } else if (xOffset < -minOffsetPercent) {
+            // If positive, move next
             newIndex = currentIndex + 1;
         }
-        gotoIndex(newIndex, currentIndex);
 
-        setIsDragging(false);
         setXOffsetPercent(0);
         setPreviousXOffsetPercent(0);
+        setIsDragging(false);
+
+        gotoIndex(newIndex, currentIndex);
     };
 
     const gotoIndex = (newIndex: number | undefined, currentIndex: number) => {
