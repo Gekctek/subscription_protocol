@@ -4,7 +4,7 @@ import DeleteIcon from "@suid/icons-material/Delete"
 import NavWrapper from '../components/NavWrapper';
 import { RSSBridgeActor, AddRequest, Subscription } from '../api/RSSBridgeActor';
 import { feedCanisterId } from '../api/CanisterIds';
-import { Identity } from '@dfinity/agent';
+import LaunchIcon from '@suid/icons-material/Launch';
 import { savedPageButton, unreadPageButton } from '../components/CommonButtons';
 import { RssFeed } from '@suid/icons-material';
 
@@ -85,31 +85,42 @@ const Manage: Component = () => {
             savedPageButton()
         ];
     });
+    const onSearchSiteClick = () => {
+        window.open(`https://feedsearch.dev/api/v1/search?result=true&url=${feedUrl()}`, "_blank")
+    }
     return (
         <NavWrapper quickButtons={quickButtons()} speedDialButtons={speedDialButtons()}>
             <div>
                 <div style={{
-                    display: 'flex',
-                    'justify-content': 'center',
-                    margin: "40px 20px"
+                    margin: "40px 20px 20px 20px"
                 }}>
                     <TextField
-                        label="RSS Feed Url"
-                        variant='outlined'
                         fullWidth={true}
+                        label="Url"
+                        variant='outlined'
                         value={feedUrl()}
                         onChange={(e, v) => {
                             setFeedUrl(v);
                         }} />
+                </div>
+                <div style={{
+                    display: 'flex',
+                    'justify-content': 'space-evenly',
+                    'align-items': 'center',
+                    margin: "0 0 40px 0"
+                }}>
                     <Button
-                        style={{
-                            "margin-left": "10px"
-                        }}
                         variant="contained"
                         onClick={() => subscribe()} disabled={!feedUrl()}>
-                        Subscribe
+                        Subscribe to Feed Url
                     </Button>
-                </div>
+                    <div>OR</div>
+                    <Button
+                        variant="contained"
+                        onClick={onSearchSiteClick}
+                        disabled={!feedUrl()}>
+                        Search URL for feeds <LaunchIcon fontSize='small' style={{ margin: "0 0 0 10px" }} />
+                    </Button></div>
                 <List >
                     <For each={subscription()?.channels} >
                         {(f) =>
