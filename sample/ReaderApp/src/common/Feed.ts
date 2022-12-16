@@ -1,25 +1,25 @@
 import { createResource, createSignal } from "solid-js";
-import { ActorMethod } from "@dfinity/agent";
+import { ActorMethod, Identity } from "@dfinity/agent";
 import { FeedActor, FeedItem, GetResult } from "../api/FeedActor";
-import { setIsRegistered } from "./Identity";
+import { identity, setIsRegistered } from "./Identity";
 
 
 export const [unreadIndex, setUnreadIndex] = createSignal<number>(0);
 
 
-export const [unreadItems, unreadResource] = createResource(fetchUnread);
+export const [unreadItems, unreadResource] = createResource(identity, fetchUnread);
 
 export const [allUnreadItemsRetrieved, setAllUnreadItemsRetrieved] = createSignal(false);
 
 
-export const [savedItems, savedResource] = createResource(fetchSaved);
+export const [savedItems, savedResource] = createResource(identity, fetchSaved);
 
 
-async function fetchUnread(b: boolean | null, info: { value: FeedItem[] | undefined; refetching: boolean | FetchOptions }): Promise<FeedItem[]> {
+async function fetchUnread(identity: Identity | null, info: { value: FeedItem[] | undefined; refetching: boolean | FetchOptions }): Promise<FeedItem[]> {
     return await fetchItems(info, FeedActor.getUnread)
 };
 
-export async function fetchSaved(b: boolean | undefined, info: { value: FeedItem[] | undefined; refetching: boolean | FetchOptions }): Promise<FeedItem[]> {
+export async function fetchSaved(identity: Identity | undefined, info: { value: FeedItem[] | undefined; refetching: boolean | FetchOptions }): Promise<FeedItem[]> {
     return fetchItems(info, FeedActor.getSaved);
 }
 

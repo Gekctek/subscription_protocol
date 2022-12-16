@@ -177,6 +177,7 @@ actor FeedReader {
                 i != hash;
             },
         );
+        // TODO cleanup orphaned items?
         #ok();
     };
 

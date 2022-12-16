@@ -2,6 +2,7 @@ import { AuthClient } from "@dfinity/auth-client";
 import { Navigator } from "@solidjs/router";
 import { createSignal } from "solid-js";
 import { identityProviderUrl } from "../api/CanisterIds";
+import { unreadResource } from "./Feed";
 import { Page } from "./Page";
 
 export const authClient = await AuthClient.create();

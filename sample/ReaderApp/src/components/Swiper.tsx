@@ -4,7 +4,6 @@ import { FeedItem } from '../api/FeedActor';
 import BackIcon from '@suid/icons-material/ArrowBackIosNew';
 import ForwardIcon from '@suid/icons-material/ArrowForwardIos';
 import { setUnreadIndex, unreadIndex, unreadItems } from '../common/Feed';
-import { onMount } from "solid-js";
 
 export type SwiperStore = {
     items: Resource<FeedItem[]>;
@@ -30,7 +29,8 @@ const Swiper: Component<Props> = (props: Props) => {
     const [previousXOffsetPercent, setPreviousXOffsetPercent] = createSignal<number>(0);
     const [xOffsetPercent, setXOffsetPercent] = createSignal<number>(0);
     const [isDragging, setIsDragging] = createSignal(false);
-    const [isLargeScreen, setIsLargeScreen] = createSignal(detectIfLargeScreen())
+    const [isLargeScreen, setIsLargeScreen] = createSignal(detectIfLargeScreen());
+    const [swiperBoxRef, setSwiperBoxRef] = createSignal<HTMLElement | undefined>();
 
     const onResize = () => {
         setIsLargeScreen(detectIfLargeScreen());
@@ -45,14 +45,18 @@ const Swiper: Component<Props> = (props: Props) => {
 
     createEffect(() => {
         let itemList = props.store.items();
-        if (!itemList) {
+        if (itemList === undefined) {
             return;
         }
+        let itemsRemaining = itemList.length - unreadIndex();
+
         // If there are only X items left, get more items with an async call
         // Then the `store.items()` will update
-        let itemsRemaining = itemList.length - unreadIndex();
-        let shouldGetMore = itemsRemaining < 3 && !props.store.allItemsRetrieved();
-        if (shouldGetMore) {
+        // OR
+        // Check for more if there are none left
+        let minCount = props.store.allItemsRetrieved() ? 0 : 2;
+
+        if (itemsRemaining <= minCount) {
             props.store.triggerGetMore();
         }
     })
@@ -96,7 +100,7 @@ const Swiper: Component<Props> = (props: Props) => {
 
         if (!isDragging()) {
             // If not dragging, don't drag until it reaches a certain point
-            if (Math.abs(tX) < 10) {
+            if (Math.abs(tX) < 25) {
                 return;
             }
             setIsDragging(true);
@@ -122,14 +126,14 @@ const Swiper: Component<Props> = (props: Props) => {
         } else if (xOffset < -.25) {
             newIndex = currentIndex + 1;
         }
-        setIndexSafe(newIndex, currentIndex);
+        gotoIndex(newIndex, currentIndex);
 
         setIsDragging(false);
         setXOffsetPercent(0);
         setPreviousXOffsetPercent(0);
     };
 
-    const setIndexSafe = (newIndex: number | undefined, currentIndex: number) => {
+    const gotoIndex = (newIndex: number | undefined, currentIndex: number) => {
         let itemList = props.store.items() ?? [];
         if (newIndex !== undefined && newIndex >= 0 && newIndex <= itemList.length) {
             setUnreadIndex(newIndex);
@@ -142,6 +146,7 @@ const Swiper: Component<Props> = (props: Props) => {
                 ? undefined
                 : { index: currentIndex, ...currentItem };
             props.onChange(newItemWithIndex, currentItemWithIndex);
+            swiperBoxRef()?.scrollTo(0, 0);
         }
     }
 
@@ -162,20 +167,20 @@ const Swiper: Component<Props> = (props: Props) => {
             <Show when={isLargeScreen()}>
                 <div class='nav-button nav-button-back'>
                     <Show when={unreadIndex() > 0}>
-                        <Fab onClick={() => setIndexSafe(unreadIndex() - 1, unreadIndex())}>
+                        <Fab onClick={() => gotoIndex(unreadIndex() - 1, unreadIndex())}>
                             <BackIcon />
                         </Fab>
                     </Show>
                 </div>
                 <div class='nav-button nav-button-next'>
                     <Show when={unreadIndex() < (unreadItems()?.length ?? 0)}>
-                        <Fab onClick={() => setIndexSafe(unreadIndex() + 1, unreadIndex())}>
+                        <Fab onClick={() => gotoIndex(unreadIndex() + 1, unreadIndex())}>
                             <ForwardIcon />
                         </Fab>
                     </Show>
                 </div>
             </Show>
-            <div class="swiper-box">
+            <div class="swiper-box" ref={(e) => setSwiperBoxRef(e)}>
                 <div
                     class="swiper-content"
                     style={{
