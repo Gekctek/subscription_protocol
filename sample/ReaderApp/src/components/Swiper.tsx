@@ -32,6 +32,7 @@ const Swiper: Component<Props> = (props: Props) => {
     const [isDragging, setIsDragging] = createSignal(false);
     const [isLargeScreen, setIsLargeScreen] = createSignal(detectIfLargeScreen());
     const [swiperBoxRef, setSwiperBoxRef] = createSignal<HTMLElement | undefined>();
+    const [lastTriggerCount, setLastTriggetCount] = createSignal();
 
     const onResize = () => {
         setIsLargeScreen(detectIfLargeScreen());
@@ -51,14 +52,19 @@ const Swiper: Component<Props> = (props: Props) => {
         }
         let itemsRemaining = itemList.length - unreadIndex();
 
+
         // If there are only X items left, get more items with an async call
         // Then the `store.items()` will update
         // OR
         // Check for more if there are none left
         let minCount = props.store.allItemsRetrieved() ? 0 : 2;
 
-        if (itemsRemaining <= minCount) {
+        if (itemsRemaining <= minCount && lastTriggerCount() != itemsRemaining) {
             props.store.triggerGetMore();
+            setLastTriggetCount(itemsRemaining);
+        }
+        else {
+            setLastTriggetCount();
         }
     })
 

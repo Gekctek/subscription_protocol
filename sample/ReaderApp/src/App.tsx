@@ -9,6 +9,7 @@ import { Route, Routes, useNavigate } from '@solidjs/router';
 import { Page } from './common/Page';
 import { identity } from './common/Identity';
 import { createTheme, ThemeProvider } from '@suid/material';
+import ReloadPrompt from './ReloadPrompt';
 
 const darkTheme = createTheme({
   palette: {
@@ -29,6 +30,7 @@ const App: Component = () => {
         <Route path={Page.Manage} component={ManagePage} />
         <Route path={Page.Saved} component={SavedPage} />
       </Routes>
+      <ReloadPrompt />
     </ThemeProvider>
   );
 };
