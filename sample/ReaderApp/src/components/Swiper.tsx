@@ -32,7 +32,6 @@ const Swiper: Component<Props> = (props: Props) => {
     const [isDragging, setIsDragging] = createSignal(false);
     const [isLargeScreen, setIsLargeScreen] = createSignal(detectIfLargeScreen());
     const [swiperBoxRef, setSwiperBoxRef] = createSignal<HTMLElement | undefined>();
-    const [lastTriggerCount, setLastTriggetCount] = createSignal();
 
     const onResize = () => {
         setIsLargeScreen(detectIfLargeScreen());
@@ -45,9 +44,14 @@ const Swiper: Component<Props> = (props: Props) => {
         };
     })
 
-    createEffect(() => {
+    createEffect((checkedEmptyLast) => {
         let itemList = props.store.items();
         if (itemList === undefined) {
+            return;
+        }
+        if (itemList.length == 0 && checkedEmptyLast) {
+            // If checked empty last, dont do it again
+            // stops the infinite checking loop
             return;
         }
         let itemsRemaining = itemList.length - unreadIndex();
@@ -59,14 +63,11 @@ const Swiper: Component<Props> = (props: Props) => {
         // Check for more if there are none left
         let minCount = props.store.allItemsRetrieved() ? 0 : 2;
 
-        if (itemsRemaining <= minCount && lastTriggerCount() != itemsRemaining) {
+        if (itemsRemaining <= minCount) {
             props.store.triggerGetMore();
-            setLastTriggetCount(itemsRemaining);
         }
-        else {
-            setLastTriggetCount();
-        }
-    })
+        return itemsRemaining == 0;
+    }, false)
 
 
 
